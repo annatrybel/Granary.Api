@@ -29,13 +29,13 @@ namespace Granary.Api.Services
         private const string ObjectName = "User";
 
         public AuthService(UserManager<ApplicationUser> userManager,
-        ILogger<AuthService> logger,
-        IConfiguration configuration,
-        SignInManager<ApplicationUser> signInManager,
-        IWebHostEnvironment hostingEnvironment, 
-        IEmailSender emailSender,
-        IHttpContextAccessor httpContextAccessor,
-        GranaryDbContext context)
+            ILogger<AuthService> logger,
+            IConfiguration configuration,
+            SignInManager<ApplicationUser> signInManager,
+            IWebHostEnvironment hostingEnvironment,
+            IEmailSender emailSender,
+            IHttpContextAccessor httpContextAccessor,
+            GranaryDbContext context)
         {
             _userManager = userManager;
             _logger = logger;
@@ -154,8 +154,8 @@ namespace Granary.Api.Services
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -218,7 +218,7 @@ namespace Granary.Api.Services
             emailBody = emailBody.Replace("{CallbackUrl}", callbackUrl);
 
             var subject = "Reset hasła";
-            await _emailSender.SendEmailAsync(user.Email, subject, emailBody);
+            await _emailSender.SendEmailAsync(user.Email!, subject, emailBody);
             return ServiceResult.Success();
         }
 
@@ -258,7 +258,7 @@ namespace Granary.Api.Services
                 _logger.LogInformation("Użytkownik zalogowany przez {Name} provider.", info.LoginProvider);
                 var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
 
-                var token = await GenerateJwtTokenAsync(user);
+                var token = await GenerateJwtTokenAsync(user!);
                 return ServiceResult<LoginResponse>.Success(new LoginResponse(token));
             }
             else
@@ -266,7 +266,7 @@ namespace Granary.Api.Services
                 var email = info.Principal.FindFirstValue(ClaimTypes.Email);
                 if (string.IsNullOrEmpty(email))
                 {
-                    return ServiceResult<LoginResponse>.Failure(AuthErrors.EmailRequired()); 
+                    return ServiceResult<LoginResponse>.Failure(AuthErrors.EmailRequired());
                 }
 
                 var user = await _userManager.FindByEmailAsync(email);
@@ -297,13 +297,13 @@ namespace Granary.Api.Services
                     }
                 }
 
-                var addLoginResult = await _userManager.AddLoginAsync(user, info);
+                var addLoginResult = await _userManager.AddLoginAsync(user!, info);
                 if (!addLoginResult.Succeeded)
                 {
                     return ServiceResult<LoginResponse>.Failure(AuthErrors.AccountLinkingFailed());
                 }
 
-                _logger.LogInformation("Konto dla {Email} zostało powiązane z dostawcą {LoginProvider}", user.Email, info.LoginProvider);
+                _logger.LogInformation("Konto dla {Email} zostało powiązane z dostawcą {LoginProvider}", user!.Email, info.LoginProvider);
 
                 var finalToken = await GenerateJwtTokenAsync(user);
                 return ServiceResult<LoginResponse>.Success(new LoginResponse(finalToken));
@@ -316,23 +316,23 @@ namespace Granary.Api.Services
             var userId = userPrincipal?.FindFirstValue(ClaimTypes.NameIdentifier);
             var roleClaim = userPrincipal?.FindFirstValue(ClaimTypes.Role) ?? "User";
 
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
             {
                 return ServiceResult<UserDto>.Failure(CommonErrors.Unauthorized());
             }
 
-            var userDto = await _context.Users
-                .Where(u => u.Id == userId)
+            var userDto = await _context.Users                
+                .Where(u => u.Id == userGuid)
                 .Select(u => new UserDto
                 {
-                    UserId = u.Id,
+                    UserId = u.Id.ToString(),
                     UserName = u.UserName ?? "",
                     Email = u.Email ?? "",
                     AvatarUrl = u.AvatarUrl,
-                    RoleName = roleClaim 
+                    RoleName = roleClaim
                 })
                 .FirstOrDefaultAsync();
-                    
+
             if (userDto == null)
             {
                 return ServiceResult<UserDto>.Failure(CommonErrors.NotFound("User", userId));
@@ -378,6 +378,3 @@ namespace Granary.Api.Services
         }
     }
 }
-
-
-

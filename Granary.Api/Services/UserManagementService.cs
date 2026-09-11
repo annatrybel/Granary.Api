@@ -16,11 +16,11 @@ namespace Granary.Api.Services
         private readonly GranaryDbContext _context;
         private readonly ILogger<UserManagementService> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly RoleManager<IdentityRole<Guid>> _roleManager;
 
         private const string ObjectName = "User";
 
-        public UserManagementService(GranaryDbContext context, ILogger<UserManagementService> logger, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UserManagementService(GranaryDbContext context, ILogger<UserManagementService> logger, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<Guid>> roleManager)
         {
             _context = context;
             _logger = logger;
@@ -28,17 +28,17 @@ namespace Granary.Api.Services
             _roleManager = roleManager;
         }
 
-        public async Task<ServiceResult<List<IdentityRole>>> GetAllRolesAsync()
+        public async Task<ServiceResult<List<IdentityRole<Guid>>>> GetAllRolesAsync()
         {
             try
             {
                 var roles = await _roleManager.Roles.ToListAsync();
-                return ServiceResult<List<IdentityRole>>.Success(roles);
+                return ServiceResult<List<IdentityRole<Guid>>>.Success(roles);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Wystąpił błąd podczas pobierania ról.");
-                return ServiceResult<List<IdentityRole>>.Failure(CommonErrors.FetchFailed("Roles"));
+                return ServiceResult<List<IdentityRole<Guid>>>.Failure(CommonErrors.FetchFailed("Roles"));
             }
         }
 
@@ -170,7 +170,7 @@ namespace Granary.Api.Services
 
                 await transaction.CommitAsync();
 
-                user.UserId = newUser.Id;
+                user.UserId = newUser.Id.ToString();
                 return ServiceResult<UserDto>.Success(user);
             }
             catch (Exception ex)
@@ -242,7 +242,7 @@ namespace Granary.Api.Services
             try
             {
                 var userData = await _context.Users
-                     .Where(u => u.Id == userId)
+                     .Where(u => u.Id.ToString() == userId)
                      .Join(_context.UserRoles,
                            u => u.Id,
                            ur => ur.UserId,
@@ -262,10 +262,10 @@ namespace Granary.Api.Services
 
                 var userDto = new UserDto
                 {
-                    UserId = userData.User.Id,
+                    UserId = userData.User.Id.ToString(),
                     UserName = userData.User.UserName ?? string.Empty,
                     Email = userData.User.Email ?? string.Empty,
-                    RoleId = userData.Role.Id,
+                    RoleId = userData.Role.Id.ToString(),
                     RoleName = userData.Role.Name ?? string.Empty
                 };
 

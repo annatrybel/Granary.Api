@@ -4,9 +4,9 @@ namespace Granary.Api.Seeders
 {
     public class RoleSeeder
     {
-        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly RoleManager<IdentityRole<Guid>> _roleManager;
 
-        public RoleSeeder(RoleManager<IdentityRole> roleManager)
+        public RoleSeeder(RoleManager<IdentityRole<Guid>> roleManager)
         {
             _roleManager = roleManager;
         }
@@ -19,7 +19,7 @@ namespace Granary.Api.Seeders
                 var roleExists = await _roleManager.RoleExistsAsync(roleName);
                 if (!roleExists)
                 {
-                    await _roleManager.CreateAsync(new IdentityRole(roleName));
+                    await _roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
                 }
             }
         }

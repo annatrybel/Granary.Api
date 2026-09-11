@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Granary.Api.Extensions;
 using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
@@ -24,7 +25,7 @@ var connectionString = ConnectionStringConverter.Convert(rawConnectionString);
 builder.Services.AddDbContext<GranaryDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
@@ -48,7 +49,13 @@ builder.Services.AddBusinessServices();
 builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 builder.Services.AddHealthChecks();
-builder.Services.AddControllers();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.WebHost.UseSentry(options =>

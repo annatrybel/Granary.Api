@@ -14,6 +14,6 @@ namespace Granary.Api.Services.Interfaces
         Task<ServiceResult<UserDto>> CreateUser(UserDto user, ClaimsPrincipal currentUser);
         Task<ServiceResult> UpdateUser(UserDto model);
         Task<ServiceResult<UserDto>> GetUserById(string userId);
-        Task<ServiceResult<List<IdentityRole>>> GetAllRolesAsync();
+        Task<ServiceResult<List<IdentityRole<Guid>>>> GetAllRolesAsync();
     }
 }
