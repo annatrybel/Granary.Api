@@ -2,7 +2,7 @@
 
 namespace Granary.Api.Models.DatabaseModels
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUser : IdentityUser<Guid>
     {
         public string? AvatarUrl { get; set; }
 

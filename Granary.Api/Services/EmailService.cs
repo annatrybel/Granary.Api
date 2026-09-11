@@ -1,5 +1,5 @@
 ﻿using System.Globalization;
-using Granary.Api.Models.Dto;
+using Granary.Api.Models.Dto.Contact;
 using Granary.Api.Services.Errors;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
