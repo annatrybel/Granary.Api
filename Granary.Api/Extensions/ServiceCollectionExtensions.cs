@@ -1,6 +1,8 @@
 ﻿using Granary.Api.Seeders;
 using Granary.Api.Services;
+using Granary.Api.Services.Catalog;
 using Granary.Api.Services.Interfaces;
+using Granary.Api.Services.Shopping;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -156,8 +158,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailSender, EmailSender>();
-        services.AddScoped<IHistoryLogService, HistoryLogService>();
-        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<ICatalogProductService, CatalogProductService>();
+        services.AddScoped<IShoppingListService, ShoppingListService>();
+        services.AddScoped<IPantryItemService, PantryItemService>();
 
         return services;
     }
