@@ -21,8 +21,7 @@ namespace Granary.Api.Models.DatabaseModels
         [MaxLength(50)]
         public string? Barcode { get; set; }
 
-        [MaxLength(10)]
-        public string? Emoji { get; set; }
+        public string? ImageUrl { get; set; }
 
         [Required, MaxLength(20)]
         public string DefaultUnit { get; set; } = "szt.";
