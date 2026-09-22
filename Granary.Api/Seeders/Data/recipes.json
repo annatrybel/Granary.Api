@@ -1,0 +1,773 @@
+[
+  {
+    "title": "Puszyste naleśniki klasyczne",
+    "description": "Klasyczne domowe naleśniki – uniwersalna baza pod dżem, twaróg lub wytrawne nadzienie.",
+    "instructions": "1. W misce zmiksuj mąkę, jajka i mleko na jednolite ciasto bez grudek.\n2. Rozgrzej patelnię z kroplą oleju.\n3. Wylewaj cienkie porcje ciasta i smaż z obu stron na złoty kolor.",
+    "prepTimeMinutes": 20,
+    "servings": 3,
+    "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Mleko 3.2%",
+        "quantity": 0.5,
+        "unit": "L",
+        "isOptional": false
+      },
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Mąka Pszenna",
+        "quantity": 0.25,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.03,
+        "unit": "L",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Chrupiące tosty z serem i pomidorem",
+    "description": "Złociste, chrupiące tosty z ciągnącym serem i soczystym pomidorem.",
+    "instructions": "1. Kromki chleba posmaruj masłem od zewnętrznej strony.\n2. W środku ułóż plastry sera i pomidora.\n3. Zapiekaj w opiekaczu lub na patelni do rozpuszczenia sera.",
+    "prepTimeMinutes": 10,
+    "servings": 1,
+    "imageUrl": "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Chleb Pszenno-Żytni",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Ser Żółty",
+        "quantity": 60,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 15,
+        "unit": "g",
+        "isOptional": true
+      },
+      {
+        "productName": "Pomidory",
+        "quantity": 0.1,
+        "unit": "kg",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Kremowa jajecznica na maśle",
+    "description": "Aksamitna jajecznica smażona na maśle, idealna z kromką świeżego chleba.",
+    "instructions": "1. Na małym ogniu powoli rozpuść masło na patelni.\n2. Wbij jajka i delikatnie mieszaj szpatułką.\n3. Zdejmij z palnika, gdy masa jest kremowa. Podawaj z chlebem i pomidorem.",
+    "prepTimeMinutes": 8,
+    "servings": 1,
+    "imageUrl": "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 3,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 20,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Pomidory",
+        "quantity": 0.15,
+        "unit": "kg",
+        "isOptional": true
+      },
+      {
+        "productName": "Chleb Pszenno-Żytni",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Spaghetti z sosem pomidorowym i czosnkiem",
+    "description": "Błyskawiczny, aromatyczny obiad w stylu włoskim ze świeżym sosem pomidorowym.",
+    "instructions": "1. Ugotuj makaron w osolonej wodzie.\n2. Na patelni rozgrzej olej, podsmaż posiekany czosnek i dodaj przecier pomidorowy.\n3. Duś 7 minut, połącz z makaronem i posyp serem.",
+    "prepTimeMinutes": 15,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1621996346565-e3d5d628169b?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Makaron Spaghetti",
+        "quantity": 200,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Przecier pomidorowy (Passata)",
+        "quantity": 300,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Czosnek",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.02,
+        "unit": "L",
+        "isOptional": false
+      },
+      {
+        "productName": "Ser Żółty",
+        "quantity": 40,
+        "unit": "g",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Chrupiące placki ziemniaczane",
+    "description": "Tradycyjne polskie placki z tartych ziemniaków, podawane ze śmietaną.",
+    "instructions": "1. Ziemniaki i cebulę zetrzyj na drobnych oczkach, odciśnij nadmiar płynu.\n2. Wymieszaj z jajkiem i łyżką mąki.\n3. Smaż placki na mocno rozgrzanym oleju na złocisto-chrupiący kolor.",
+    "prepTimeMinutes": 30,
+    "servings": 3,
+    "imageUrl": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Ziemniaki",
+        "quantity": 1,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Cebula",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Mąka Pszenna",
+        "quantity": 0.05,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.08,
+        "unit": "L",
+        "isOptional": false
+      },
+      {
+        "productName": "Śmietana 18%",
+        "quantity": 80,
+        "unit": "g",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Zapiekana kajzerka z serem i pieczarkami",
+    "description": "Domowa zapiekanka zero-waste – ratuje wczorajszą bułkę i pieczarki.",
+    "instructions": "1. Pieczarki zetrzyj i podsmaż na maśle z odrobiną cebuli.\n2. Przekrój kajzerkę, nałóż farsz pieczarkowy i przykryj serem.\n3. Piecz w 190°C przez ok. 8 minut do rozpuszczenia sera.",
+    "prepTimeMinutes": 15,
+    "servings": 1,
+    "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Bułka Kajzerka",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Pieczarki",
+        "quantity": 100,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Ser Żółty",
+        "quantity": 50,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 15,
+        "unit": "g",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Szakszuka z pomidorami i jajkami",
+    "description": "Jajka sadzone w gęstym, aromatycznym sosie pomidorowo-czosnkowym.",
+    "instructions": "1. Na oleju podsmaż posiekaną cebulę, czosnek i paprykę.\n2. Dodaj pokrojone pomidory lub przecier, duś do zgęstnienia.\n3. Zrób wgłębienia w sosie, wbij jajka, przykryj patelnię i gotuj na małym ogniu ok. 5 minut.",
+    "prepTimeMinutes": 20,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1590412200988-a436970781fa?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 3,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Pomidory",
+        "quantity": 0.4,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Papryka Czerwona",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Cebula",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Czosnek",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.02,
+        "unit": "L",
+        "isOptional": false
+      }
+    ]
+  },
+  {
+    "title": "Makaron w sosie śmietankowo-szpinakowym",
+    "description": "Kremowy makaron z podsmażanym świeżym szpinakiem, czosnkiem i śmietaną.",
+    "instructions": "1. Ugotuj makaron spaghetti al dente.\n2. Na patelni rozpuść masło, wrzuć posiekany czosnek i świeży szpinak.\n3. Gdy szpinak zwiędnie, wlej śmietanę i wymieszaj z makaronem.",
+    "prepTimeMinutes": 15,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Makaron Spaghetti",
+        "quantity": 200,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Szpinak Świeży",
+        "quantity": 150,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Śmietana 18%",
+        "quantity": 100,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Czosnek",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 20,
+        "unit": "g",
+        "isOptional": false
+      }
+    ]
+  },
+  {
+    "title": "Soczysty kurczak z patelni z ryżem",
+    "description": "Lekki i sycący obiad obiadowy z podsmażaną piersią z kurczaka i ryżem.",
+    "instructions": "1. Ugotuj ryż w osolonej wodzie.\n2. Pierś z kurczaka pokrój w kostkę i podsmaż na oleju z cebulą i czosnkiem.\n3. Podawaj kurczaka z ciepłym ryżem i świeżym pomidorem.",
+    "prepTimeMinutes": 20,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Pierś z kurczaka",
+        "quantity": 0.4,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Ryż Biały",
+        "quantity": 0.15,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Cebula",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.03,
+        "unit": "L",
+        "isOptional": false
+      },
+      {
+        "productName": "Pomidory",
+        "quantity": 0.2,
+        "unit": "kg",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Tradycyjne kluski leniwe z twarogu",
+    "description": "Słodkie, miękkie kluski z twarogu i mąki polane roztopionym masłem.",
+    "instructions": "1. Twaróg rozgnieć widelcem, dodaj jajko i mąkę, zagnieć zwarte ciasto.\n2. Uformuj wałek i krój ukośne kluseczki.\n3. Wrzucaj na osolony wrzątek i gotuj 2 minuty od wypłynięcia. Polej masłem.",
+    "prepTimeMinutes": 25,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Twaróg Półtłusty",
+        "quantity": 250,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Mąka Pszenna",
+        "quantity": 100,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 30,
+        "unit": "g",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Zapiekanka ziemniaczana z boczkiem i serem",
+    "description": "Pyszne, sycące danie z piekarnika idealne na chłodniejsze dni.",
+    "instructions": "1. Ziemniaki podgotuj i pokrój w plastry.\n2. Boczek pokrój w kostkę i podsmaż z cebulą na patelni.\n3. Układaj warstwami w naczyniu żaroodpornym, posyp serem i zapiecz w 190°C przez 20 minut.",
+    "prepTimeMinutes": 40,
+    "servings": 3,
+    "imageUrl": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Ziemniaki",
+        "quantity": 0.8,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Boczek wędzony",
+        "quantity": 150,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Ser Żółty",
+        "quantity": 100,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Cebula",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Śmietana 18%",
+        "quantity": 80,
+        "unit": "g",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Puszysty omlet ze szpinakiem i mozzarellą",
+    "description": "Śniadaniowy omlet bogaty w białko ze świeżym szpinakiem i ciągnącą mozzarellą.",
+    "instructions": "1. Jajka roztrzep ze szczyptą soli i łyżką mleka.\n2. Na patelni rozpuść masło, wrzuć liście szpinaku na 1 minutę, zalej masą jajeczną.\n3. Posyp porwaną mozzarellą, przykryj i smaż na wolnym ogniu do ścięcia.",
+    "prepTimeMinutes": 10,
+    "servings": 1,
+    "imageUrl": "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Szpinak Świeży",
+        "quantity": 60,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Mozzarella",
+        "quantity": 60,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 10,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Mleko 3.2%",
+        "quantity": 0.03,
+        "unit": "L",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Domowa zupa pomidorowa z ryżem",
+    "description": "Polska klasyka niedzielnego obiadu – aksamitna pomidorówka ze śmietaną.",
+    "instructions": "1. W garnku podduś posiekaną cebulę na maśle, dodaj przecier pomidorowy i świeże pomidory.\n2. Dolej 700 ml wody, gotuj 15 minut i zblenduj.\n3. Zabiel zahartowaną śmietaną i podawaj z ugotowanym ryżem.",
+    "prepTimeMinutes": 30,
+    "servings": 4,
+    "imageUrl": "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Przecier pomidorowy (Passata)",
+        "quantity": 400,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Pomidory",
+        "quantity": 0.4,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Ryż Biały",
+        "quantity": 0.15,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Śmietana 18%",
+        "quantity": 100,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Cebula",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 20,
+        "unit": "g",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Świeży twarożek ze śmietaną i cebulką",
+    "description": "Błyskawiczna pasta kanapkowa ze świeżego twarogu, pomidora i drobnej cebuli.",
+    "instructions": "1. Twaróg rozgnieć widelcem z dodatkiem śmietany.\n2. Cebulę i pomidora pokrój w drobną kostkę i połącz z twarogiem.\n3. Podawaj z pieczywem lub chrupiącą kajzerką.",
+    "prepTimeMinutes": 5,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Twaróg Półtłusty",
+        "quantity": 200,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Śmietana 18%",
+        "quantity": 70,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Pomidory",
+        "quantity": 0.15,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Cebula",
+        "quantity": 0.5,
+        "unit": "pcs",
+        "isOptional": true
+      },
+      {
+        "productName": "Chleb Pszenno-Żytni",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Kotlet z kurczaka w złocistej panierce",
+    "description": "Klasyczny polski schabowy w drobiowym wydaniu – miękka pierś w chrupiącej bułce tartej.",
+    "instructions": "1. Pierś z kurczaka przekrój na kotlety i delikatnie rozbij.\n2. Obtocz w mące, rozkłóconym jajku, a na końcu w bułce tartej.\n3. Smaż na rozgrzanym oleju po 3-4 minuty z każdej strony na złoty kolor.",
+    "prepTimeMinutes": 20,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Pierś z kurczaka",
+        "quantity": 0.4,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Bułka Tarta",
+        "quantity": 70,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Mąka Pszenna",
+        "quantity": 30,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.05,
+        "unit": "L",
+        "isOptional": false
+      }
+    ]
+  },
+  {
+    "title": "Ciepła owsianka z duszonym jabłkiem",
+    "description": "Pożywne, rozgrzewające śniadanie z płatków owsianych na mleku z karmelizowanym jabłkiem.",
+    "instructions": "1. Płatki owsiane zalej mlekiem i gotuj na małym ogniu ok. 4 minut do zgęstnienia.\n2. Jabłko pokrój w kostkę i podsmaż na patelni z masłem.\n3. Wyłóż jabłka na ciepłą owsiankę.",
+    "prepTimeMinutes": 10,
+    "servings": 1,
+    "imageUrl": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Płatki owsiane",
+        "quantity": 60,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Mleko 3.2%",
+        "quantity": 0.25,
+        "unit": "L",
+        "isOptional": false
+      },
+      {
+        "productName": "Jabłka",
+        "quantity": 0.2,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 10,
+        "unit": "g",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Wrapy z kurczakiem, warzywami i sosem jogurtowym",
+    "description": "Szybki lunchbox z tortilli, pieczonego kurczaka, papryki i orzeźwiającego sosu czosnkowego.",
+    "instructions": "1. Kurczaka pokrój w paski i podsmaż na oleju z czosnkiem.\n2. Jogurt wymieszaj z roztartym czosnkiem.\n3. Posmaruj tortillę sosem, ułóż kurczaka, plastry pomidora i papryki, zwiń i podgrzej na suchej patelni.",
+    "prepTimeMinutes": 15,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Tortilla",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Pierś z kurczaka",
+        "quantity": 0.25,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Jogurt Naturalny",
+        "quantity": 100,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Pomidory",
+        "quantity": 0.15,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Papryka Czerwona",
+        "quantity": 0.5,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Czosnek",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": true
+      }
+    ]
+  },
+  {
+    "title": "Smażony ryż z warzywami i jajkiem",
+    "description": "Azjatycki klasyk zero-waste – ratuje wczorajszy ugotowany ryż i resztki warzyw.",
+    "instructions": "1. Na patelni z olejem podsmaż posiekaną cebulę, czosnek i paprykę pokrojoną w kostkę.\n2. Wsyp ugotowany zimny ryż i smaż na dużym ogniu przez 3 minuty.\n3. Zrób miejsce na patelni, wbij jajko, wymieszaj na ściętą jajecznicę i połącz z ryżem.",
+    "prepTimeMinutes": 15,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Ryż Biały",
+        "quantity": 0.2,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Jajka (M/L)",
+        "quantity": 2,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Cebula",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Papryka Czerwona",
+        "quantity": 0.5,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Czosnek",
+        "quantity": 1,
+        "unit": "pcs",
+        "isOptional": false
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.03,
+        "unit": "L",
+        "isOptional": false
+      }
+    ]
+  },
+  {
+    "title": "Pieczone jabłka z masłem",
+    "description": "Prosty, ciepły deser prosto z piekarnika o głębokim, maślanym aromacie.",
+    "instructions": "1. Odetnij wierzch jabłek i wydrąż gniazda nasienne.\n2. Do środka każdego jabłka włóż po kawałku masła.\n3. Piecz w temperaturze 180°C przez 20-25 minut, aż owoce zmiękną.",
+    "prepTimeMinutes": 25,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Jabłka",
+        "quantity": 0.5,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Masło Extra",
+        "quantity": 30,
+        "unit": "g",
+        "isOptional": false
+      }
+    ]
+  },
+  {
+    "title": "Śródziemnomorska sałatka z pomidorów i mozzarelli",
+    "description": "Soczyste pomidory z kremową mozzarellą, świeżym szpinakiem i olejem.",
+    "instructions": "1. Pomidory i mozzarellę pokrój w równe plastry.\n2. Na talerzu ułóż liście szpinaku, na nich naprzemiennie pomidory i ser.\n3. Całość skrop delikatnie olejem i oprósz pieprzem.",
+    "prepTimeMinutes": 7,
+    "servings": 2,
+    "imageUrl": "https://images.unsplash.com/photo-1592417817098-8f3d69102353?auto=format&fit=crop&w=600&q=80",
+    "ingredients": [
+      {
+        "productName": "Pomidory",
+        "quantity": 0.3,
+        "unit": "kg",
+        "isOptional": false
+      },
+      {
+        "productName": "Mozzarella",
+        "quantity": 125,
+        "unit": "g",
+        "isOptional": false
+      },
+      {
+        "productName": "Szpinak Świeży",
+        "quantity": 50,
+        "unit": "g",
+        "isOptional": true
+      },
+      {
+        "productName": "Olej Rzepakowy",
+        "quantity": 0.015,
+        "unit": "L",
+        "isOptional": true
+      }
+    ]
+  }
+]
+

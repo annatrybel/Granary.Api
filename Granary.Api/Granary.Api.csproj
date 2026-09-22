@@ -34,7 +34,14 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+    <Folder Include="Seeders\Data\" />
     <Folder Include="Sentry\" />
   </ItemGroup>
+
+	<ItemGroup>
+	<None Update="Seeders\Data\*.json">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
+	</ItemGroup>
 
 </Project>

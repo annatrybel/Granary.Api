@@ -1,0 +1,201 @@
+[
+  {
+    "name": "Mleko 3.2%",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "L",
+    "defaultShelfLifeDays": 7,
+    "barcode": "5900820000018"
+  },
+  {
+    "name": "Jajka (M/L)",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 21
+  },
+  {
+    "name": "Ser Żółty",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 14
+  },
+  {
+    "name": "Masło Extra",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 30
+  },
+  {
+    "name": "Twaróg Półtłusty",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 7
+  },
+  {
+    "name": "Śmietana 18%",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 14
+  },
+  {
+    "name": "Jogurt Naturalny",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 14
+  },
+  {
+    "name": "Mozzarella",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1592417817098-8f3d69102353?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 10
+  },
+  {
+    "name": "Chleb Pszenno-Żytni",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 3
+  },
+  {
+    "name": "Bułka Kajzerka",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 2
+  },
+  {
+    "name": "Bułka Tarta",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 180
+  },
+  {
+    "name": "Tortilla",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 60
+  },
+  {
+    "name": "Jabłka",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 14
+  },
+  {
+    "name": "Pomidory",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 5
+  },
+  {
+    "name": "Ziemniaki",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 30
+  },
+  {
+    "name": "Cebula",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 30
+  },
+  {
+    "name": "Czosnek",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 60
+  },
+  {
+    "name": "Szpinak Świeży",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 4
+  },
+  {
+    "name": "Pieczarki",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 5
+  },
+  {
+    "name": "Papryka Czerwona",
+    "categorySlug": "veggies",
+    "imageUrl": "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "pcs",
+    "defaultShelfLifeDays": 7
+  },
+  {
+    "name": "Pierś z kurczaka",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 3
+  },
+  {
+    "name": "Boczek wędzony",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1608797178974-15b35a61dd75?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 14
+  },
+  {
+    "name": "Mąka Pszenna",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 365
+  },
+  {
+    "name": "Olej Rzepakowy",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "L",
+    "defaultShelfLifeDays": 180
+  },
+  {
+    "name": "Makaron Spaghetti",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1621996346565-e3d5d628169b?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 365
+  },
+  {
+    "name": "Ryż Biały",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 365
+  },
+  {
+    "name": "Przecier pomidorowy (Passata)",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 365
+  },
+  {
+    "name": "Płatki owsiane",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 365
+  }
+]
+
+

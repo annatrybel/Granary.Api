@@ -8,7 +8,7 @@ namespace Granary.Api.Models.Dto
         public Guid Id { get; set; }
         public Guid ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
-        public string? Emoji { get; set; }
+        public string? ImageUrl { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public StorageLocation StorageLocation { get; set; }
         public PantryItemStatus Status { get; set; }
