@@ -24,7 +24,7 @@ namespace Granary.Api.Services.Catalog
             Id = p.Id,
             Name = p.Name,
             Barcode = p.Barcode,
-            Emoji = p.Emoji,
+            ImageUrl = p.ImageUrl,
             DefaultUnit = p.DefaultUnit,
             DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
             CategoryId = p.CategoryId,
@@ -119,7 +119,7 @@ namespace Granary.Api.Services.Catalog
                 CategoryId = createDto.CategoryId,
                 Name = createDto.Name,
                 Barcode = createDto.Barcode,
-                Emoji = createDto.Emoji,
+                ImageUrl = createDto.ImageUrl,
                 DefaultUnit = createDto.DefaultUnit ?? "szt.",
                 DefaultShelfLifeDays = createDto.DefaultShelfLifeDays,
                 CreatedByUserId = currentUserId 
@@ -156,7 +156,7 @@ namespace Granary.Api.Services.Catalog
             product.CategoryId = updateDto.CategoryId;
             product.Name = updateDto.Name;
             product.Barcode = updateDto.Barcode;
-            product.Emoji = updateDto.Emoji;
+            product.ImageUrl = updateDto.ImageUrl;
             product.DefaultUnit = updateDto.DefaultUnit ?? "szt.";
             product.DefaultShelfLifeDays = updateDto.DefaultShelfLifeDays;
 

@@ -38,7 +38,7 @@ namespace Granary.Api.Services
                     Id = pi.Id,
                     ProductId = pi.ProductId,
                     ProductName = pi.Product.Name,
-                    Emoji = pi.Product.Emoji,
+                    ImageUrl = pi.Product.ImageUrl, 
                     CategoryName = pi.Product.Category.Name,
                     StorageLocation = pi.StorageLocation,
                     Status = pi.Status,
@@ -56,6 +56,7 @@ namespace Granary.Api.Services
         {
             Guid targetProductId;
 
+            // 1. SCENARIUSZ: PRODUKT Z KATALOGU
             if (dto.ProductId.HasValue && dto.ProductId.Value != Guid.Empty)
             {
                 var productExists = await _dbContext.Products.AnyAsync(p => p.Id == dto.ProductId.Value);
@@ -65,7 +66,8 @@ namespace Granary.Api.Services
                 }
                 targetProductId = dto.ProductId.Value;
             }
-            else if (!string.IsNullOrWhiteSpace(dto.CustomProductName) && dto.CustomCategoryId.HasValue)
+            // 2. SCENARIUSZ: WŁASNY PRODUKT (CUSTOM)
+            else if (!string.IsNullOrWhiteSpace(dto.CustomProductName))
             {
                 var trimmedName = dto.CustomProductName.Trim();
 
@@ -79,13 +81,31 @@ namespace Granary.Api.Services
                 }
                 else
                 {
+                    // Jeśli nie wybrano kategorii, bierzemy kategorię "Inne" lub pierwszą lepszą z bazy:
+                    Guid categoryId;
+                    if (dto.CustomCategoryId.HasValue && dto.CustomCategoryId.Value != Guid.Empty)
+                    {
+                        categoryId = dto.CustomCategoryId.Value;
+                    }
+                    else
+                    {
+                        var defaultCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "Inne")
+                                           ?? await _dbContext.Categories.FirstOrDefaultAsync();
+
+                        if (defaultCategory == null)
+                        {
+                            return ServiceResult<PantryItemDto>.Failure("Brak kategorii w bazie. Skonfiguruj kategorie.");
+                        }
+                        categoryId = defaultCategory.Id;
+                    }
+
                     var newCustomProduct = new Product
                     {
                         Id = Guid.NewGuid(),
                         Name = trimmedName,
-                        CategoryId = dto.CustomCategoryId.Value,
-                        Emoji = dto.CustomEmoji ?? "📦",
-                        DefaultUnit = dto.Unit ?? "szt.",
+                        CategoryId = categoryId,
+                        ImageUrl = dto.CustomImageUrl, 
+                        DefaultUnit = !string.IsNullOrWhiteSpace(dto.Unit) ? dto.Unit : "szt.",
                         CreatedByUserId = userId
                     };
 
@@ -95,7 +115,7 @@ namespace Granary.Api.Services
             }
             else
             {
-                return ServiceResult<PantryItemDto>.Failure("Musisz wybrać produkt z katalogu lub podać nazwę i kategorię własnego produktu.");
+                return ServiceResult<PantryItemDto>.Failure("Musisz wybrać produkt z katalogu lub podać nazwę własnego produktu.");
             }
 
             var pantryItem = new PantryItem
@@ -105,9 +125,9 @@ namespace Granary.Api.Services
                 ProductId = targetProductId,
                 StorageLocation = dto.Location,
                 Status = PantryItemStatus.Active,
-                Quantity = dto.Quantity,
+                Quantity = dto.Quantity > 0 ? dto.Quantity : 1,
                 Unit = !string.IsNullOrWhiteSpace(dto.Unit) ? dto.Unit : "szt.",
-                PurchaseDate = dto.PurchaseDate,
+                PurchaseDate = dto.PurchaseDate != default ? dto.PurchaseDate : DateOnly.FromDateTime(DateTime.UtcNow),
                 ExpirationDate = dto.ExpirationDate,
                 CreatedAt = DateTime.UtcNow
             };
@@ -221,7 +241,7 @@ namespace Granary.Api.Services
                     Id = pi.Id,
                     ProductId = pi.ProductId,
                     ProductName = pi.Product.Name,
-                    Emoji = pi.Product.Emoji,
+                    ImageUrl = pi.Product.ImageUrl,
                     CategoryName = pi.Product.Category.Name,
                     StorageLocation = pi.StorageLocation,
                     Status = pi.Status,

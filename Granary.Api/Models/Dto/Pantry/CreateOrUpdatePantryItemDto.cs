@@ -10,7 +10,7 @@ namespace Granary.Api.Models.Dto
         [StringLength(200)]
         public string? CustomProductName { get; set; }
         public Guid? CustomCategoryId { get; set; }
-        public string? CustomEmoji { get; set; }
+        public string? CustomImageUrl { get; set; }
 
         [Required(ErrorMessage = "Lokalizacja jest wymagana.")]
         public StorageLocation Location { get; set; } = StorageLocation.Fridge;

@@ -84,7 +84,6 @@ namespace Granary.Api.Services.Shopping
                         Id = i.Id,
                         ProductId = i.ProductId,
                         Name = i.Name,
-                        Emoji = i.Product != null ? i.Product.Emoji : "🛒",
                         Quantity = i.Quantity,
                         Unit = i.Unit,
                         CreatedAt = i.CreatedAt
@@ -152,7 +151,6 @@ namespace Granary.Api.Services.Shopping
                 var prod = await _dbContext.Products.FindAsync(productId.Value);
                 if (prod == null) return ServiceResult<ShoppingItemDto>.Failure("Produkt z bazy nie istnieje.");
                 itemName = prod.Name;
-                emoji = prod.Emoji;
             }
             else if (!string.IsNullOrWhiteSpace(dto.CustomName))
             {
@@ -294,7 +292,6 @@ namespace Granary.Api.Services.Shopping
                 Id = Guid.NewGuid(),
                 Name = name,
                 CategoryId = defaultCat.Id,
-                Emoji = "📦",
                 DefaultUnit = unit ?? "szt.",
                 CreatedByUserId = userId
             };
