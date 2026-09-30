@@ -1,6 +1,7 @@
 ﻿using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Recipes;
+using Granary.Api.Models.Dto;
 using Granary.Api.Models.Enums;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
@@ -43,6 +44,11 @@ namespace Granary.Api.Services
                 targetProductIds = userPantry.Select(p => p.ProductId).ToHashSet();
             }
 
+            var userInteractions = await _context.UserRecipeInteractions
+                .AsNoTracking()
+                .Where(x => x.UserId == userId)
+                .ToDictionaryAsync(x => x.RecipeId);
+
             var recipes = await _context.Recipes
                 .AsNoTracking()
                 .Include(r => r.Ingredients)
@@ -75,6 +81,8 @@ namespace Granary.Api.Services
 
                 var summary = string.Join(", ", owned.Take(3).Select(i => i.Product?.Name).Where(n => !string.IsNullOrEmpty(n)));
 
+                userInteractions.TryGetValue(recipe.Id, out var interaction);
+
                 return new RecipeMatchDto
                 {
                     RecipeId = recipe.Id,
@@ -88,11 +96,11 @@ namespace Granary.Api.Services
                     TotalIngredientsCount = totalCount,
                     ExpiringIngredientsSaved = expiringSaved,
                     CanBeCookedNow = missing.Count == 0,
+                    IsFavorite = interaction?.IsFavorite ?? false, 
                     UsedIngredientsSummary = string.IsNullOrEmpty(summary) ? "Brak składników ze spiżarni" : $"Wykorzystasz: {summary}",
                     MissingIngredients = missing
                 };
             })
-
             .Where(r => r.OwnedIngredientsCount > 0 || !targetProductIds.Any())
             .OrderByDescending(r => r.CanBeCookedNow)
             .ThenByDescending(r => r.ExpiringIngredientsSaved)
@@ -121,6 +129,16 @@ namespace Granary.Api.Services
                 .Select(pi => pi.ProductId)
                 .ToHashSetAsync();
 
+            var userInteraction = await _context.UserRecipeInteractions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.RecipeId == recipeId);
+
+            var allVotes = await _context.UserRecipeInteractions
+                .AsNoTracking()
+                .Where(x => x.RecipeId == recipeId && x.Vote != null)
+                .Select(x => x.Vote)
+                .ToListAsync();
+
             var detail = new RecipeDetailDto
             {
                 Id = recipe.Id,
@@ -130,6 +148,10 @@ namespace Granary.Api.Services
                 ImageUrl = recipe.ImageUrl,
                 PrepTimeMinutes = recipe.PrepTimeMinutes,
                 Servings = recipe.Servings,
+                IsFavorite = userInteraction?.IsFavorite ?? false,
+                LikesCount = allVotes.Count(v => v == true),
+                DislikesCount = allVotes.Count(v => v == false),
+                UserVote = userInteraction?.Vote,
                 Ingredients = recipe.Ingredients.Select(i => new RecipeIngredientDto
                 {
                     ProductId = i.ProductId,
@@ -142,6 +164,119 @@ namespace Granary.Api.Services
             };
 
             return ServiceResult<RecipeDetailDto>.Success(detail);
+        }
+
+        public async Task<ServiceResult<bool>> ToggleFavoriteAsync(Guid recipeId, Guid userId)
+        {
+            var interaction = await _context.UserRecipeInteractions
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.RecipeId == recipeId);
+
+            if (interaction == null)
+            {
+                interaction = new UserRecipeInteraction
+                {
+                    UserId = userId,
+                    RecipeId = recipeId,
+                    IsFavorite = true,
+                    FavoritedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.UserRecipeInteractions.Add(interaction);
+            }
+            else
+            {
+                interaction.IsFavorite = !interaction.IsFavorite;
+                interaction.FavoritedAt = interaction.IsFavorite ? DateTime.UtcNow : null;
+                interaction.UpdatedAt = DateTime.UtcNow;
+
+                if (!interaction.IsFavorite && interaction.Vote == null)
+                {
+                    _context.UserRecipeInteractions.Remove(interaction);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return ServiceResult<bool>.Success(interaction.IsFavorite);
+        }
+
+        public async Task<ServiceResult<VoteResultDto>> VoteRecipeAsync(Guid recipeId, Guid userId, bool isLike)
+        {
+            var interaction = await _context.UserRecipeInteractions
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.RecipeId == recipeId);
+
+            if (interaction == null)
+            {
+                interaction = new UserRecipeInteraction
+                {
+                    UserId = userId,
+                    RecipeId = recipeId,
+                    Vote = isLike,
+                    VotedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.UserRecipeInteractions.Add(interaction);
+            }
+            else
+            {
+                if (interaction.Vote == isLike)
+                {
+                    interaction.Vote = null;
+                    interaction.VotedAt = null;
+                }
+                else
+                {
+                    interaction.Vote = isLike;
+                    interaction.VotedAt = DateTime.UtcNow;
+                }
+
+                interaction.UpdatedAt = DateTime.UtcNow;
+
+                if (!interaction.IsFavorite && interaction.Vote == null)
+                {
+                    _context.UserRecipeInteractions.Remove(interaction);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            var allVotes = await _context.UserRecipeInteractions
+                .AsNoTracking()
+                .Where(x => x.RecipeId == recipeId && x.Vote != null)
+                .Select(x => x.Vote)
+                .ToListAsync();
+
+            return ServiceResult<VoteResultDto>.Success(new VoteResultDto
+            {
+                LikesCount = allVotes.Count(v => v == true),
+                DislikesCount = allVotes.Count(v => v == false),
+                UserVote = interaction.Vote
+            });
+        }
+
+        public async Task<ServiceResult<IEnumerable<RecipeMatchDto>>> GetFavoritesAsync(Guid userId)
+        {
+            var favRecipeIds = await _context.UserRecipeInteractions
+                .AsNoTracking()
+                .Where(x => x.UserId == userId && x.IsFavorite)
+                .Select(x => x.RecipeId)
+                .ToListAsync();
+
+            var recipes = await _context.Recipes
+                .AsNoTracking()
+                .Where(r => r.CreatedByUserId == userId || favRecipeIds.Contains(r.Id))
+                .Select(r => new RecipeMatchDto
+                {
+                    RecipeId = r.Id,
+                    Title = r.Title,
+                    Description = r.Description,
+                    ImageUrl = r.ImageUrl,
+                    PrepTimeMinutes = r.PrepTimeMinutes,
+                    Servings = r.Servings,
+                    IsFavorite = true
+                })
+                .ToListAsync();
+
+            return ServiceResult<IEnumerable<RecipeMatchDto>>.Success(recipes);
         }
     }
 }

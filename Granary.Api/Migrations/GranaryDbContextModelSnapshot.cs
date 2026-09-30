@@ -402,6 +402,36 @@ namespace Granary.Api.Migrations
                     b.ToTable("ShoppingListItems");
                 });
 
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.UserRecipeInteraction", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RecipeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FavoritedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("Vote")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("VotedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "RecipeId");
+
+                    b.HasIndex("RecipeId");
+
+                    b.ToTable("UserRecipeInteractions");
+                });
+
             modelBuilder.Entity("Granary.Api.Models.Dto.Users.UserDto", b =>
                 {
                     b.Property<string>("AvatarUrl")
@@ -692,6 +722,25 @@ namespace Granary.Api.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("ShoppingList");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.UserRecipeInteraction", b =>
+                {
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Recipe", "Recipe")
+                        .WithMany()
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Granary.Api.Models.DatabaseModels.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Recipe");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

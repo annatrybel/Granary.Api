@@ -17,6 +17,8 @@ namespace Granary.Api.Models.Dto.Recipes
         public int ExpiringIngredientsSaved { get; set; }
         public bool CanBeCookedNow { get; set; }
 
+        public bool IsFavorite { get; set; }
+
         public string UsedIngredientsSummary { get; set; } = string.Empty;
 
         public string DurationAndPortions => $"{PrepTimeMinutes} min • {Servings} {(Servings == 1 ? "porcja" : "porcje")}";
@@ -42,6 +44,10 @@ namespace Granary.Api.Models.Dto.Recipes
         public int PrepTimeMinutes { get; set; }
         public int Servings { get; set; }
 
+        public bool IsFavorite { get; set; }
+        public int LikesCount { get; set; }
+        public int DislikesCount { get; set; }
+        public bool? UserVote { get; set; } 
         public List<RecipeIngredientDto> Ingredients { get; set; } = new();
     }
 
@@ -55,5 +61,3 @@ namespace Granary.Api.Models.Dto.Recipes
         public bool IsOwnedInPantry { get; set; }
     }
 }
-
-

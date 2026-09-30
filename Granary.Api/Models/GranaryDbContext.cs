@@ -19,10 +19,11 @@ namespace Granary.Api.Models
         public DbSet<PantryItem> PantryItems { get; set; }
         public DbSet<Recipe> Recipes { get; set; }
         public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
-        public DbSet<MealPlan> MealPlans { get; set; }
-        public DbSet<MealPlanRecipe> MealPlanRecipes { get; set; }
+        public DbSet<MealPlan> MealPlans { get; set; }     //przemyslec i jak cos to do usuniecia
+        public DbSet<MealPlanRecipe> MealPlanRecipes { get; set; }  //przemyslec i jak cos to do usuniecia
         public DbSet<ShoppingList> ShoppingLists { get; set; }
         public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
+        public DbSet<UserRecipeInteraction> UserRecipeInteractions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,6 +51,15 @@ namespace Granary.Api.Models
             modelBuilder.Entity<MealPlanRecipe>()
                 .Property(m => m.MealType)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<UserRecipeInteraction>()
+                .HasKey(x => new { x.UserId, x.RecipeId });
+
+            modelBuilder.Entity<UserRecipeInteraction>()
+                .HasOne(x => x.Recipe)
+                .WithMany()
+                .HasForeignKey(x => x.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

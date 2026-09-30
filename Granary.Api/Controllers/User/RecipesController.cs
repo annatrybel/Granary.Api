@@ -1,5 +1,4 @@
 ﻿using Granary.Api.Models.Dto.Recipes;
-using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,7 +42,19 @@ namespace Granary.Api.Controllers.Mobile
         }
 
         /// <summary>
-        /// Pobiera pełne szczegóły wybranego przepisu z instrukcją.
+        /// Pobiera przepisy użytkownika do sekcji "Twoje i ulubione".
+        /// </summary>
+        [HttpGet("favorites")]
+        [ProducesResponseType(typeof(IEnumerable<RecipeMatchDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetFavorites()
+        {
+            var userId = GetCurrentUserId();
+            var result = await _recipeService.GetFavoritesAsync(userId);
+            return HandleServiceResult(result);
+        }
+
+        /// <summary>
+        /// Pobiera pełne szczegóły wybranego przepisu z instrukcją, statystykami polubień i głosem użytkownika.
         /// </summary>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(RecipeDetailDto), StatusCodes.Status200OK)]
@@ -52,6 +63,30 @@ namespace Granary.Api.Controllers.Mobile
         {
             var userId = GetCurrentUserId();
             var result = await _recipeService.GetByIdAsync(id, userId);
+            return HandleServiceResult(result);
+        }
+
+        /// <summary>
+        /// Przełącza status serduszka (dodaje lub usuwa z ulubionych).
+        /// </summary>
+        [HttpPost("{id}/favorite")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ToggleFavorite(Guid id)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _recipeService.ToggleFavoriteAsync(id, userId);
+            return HandleServiceResult(result);
+        }
+
+        /// <summary>
+        /// Głosowanie na przepis .
+        /// </summary>
+        [HttpPost("{id}/vote")]
+        [ProducesResponseType(typeof(VoteResultDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> Vote(Guid id, [FromBody] VoteRecipeRequest request)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _recipeService.VoteRecipeAsync(id, userId, request.IsLike);
             return HandleServiceResult(result);
         }
     }
