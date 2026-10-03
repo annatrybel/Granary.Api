@@ -89,5 +89,20 @@ namespace Granary.Api.Controllers.Mobile
             var result = await _recipeService.VoteRecipeAsync(id, userId, request.IsLike);
             return HandleServiceResult(result);
         }
+
+        /// <summary>
+        /// Tworzy nowy własny przepis powiązany z zalogowanym użytkownikiem.
+        /// </summary>
+        /// <param name="dto">Dane nowego przepisu (tytuł, składniki, kroki przygotowania, zdjęcie).</param>
+        /// <returns>Utworzony przepis ze szczegółami.</returns>
+        [HttpPost]
+        [ProducesResponseType(typeof(RecipeDetailDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateCustomRecipe([FromBody] CreateCustomRecipeDto dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _recipeService.CreateCustomRecipeAsync(dto, userId);
+            return HandleServiceResult(result);
+        }
     }
 }

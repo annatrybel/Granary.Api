@@ -278,5 +278,128 @@ namespace Granary.Api.Services
 
             return ServiceResult<IEnumerable<RecipeMatchDto>>.Success(recipes);
         }
+
+        public async Task<ServiceResult<RecipeDetailDto>> CreateCustomRecipeAsync(CreateCustomRecipeDto dto, Guid userId)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title))
+            {
+                return ServiceResult<RecipeDetailDto>.Failure("Nazwa przepisu nie może być pusta.");
+            }
+            var instructions = dto.Steps != null && dto.Steps.Any()
+                ? string.Join("\n", dto.Steps.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()))
+                : "Brak szczegółowej instrukcji.";
+
+            var recipe = new Recipe
+            {
+                Id = Guid.NewGuid(),
+                Title = dto.Title.Trim(),
+                Description = !string.IsNullOrWhiteSpace(dto.Description)
+                    ? dto.Description.Trim()
+                    : (!string.IsNullOrWhiteSpace(dto.Category) ? $"Kategoria: {dto.Category}" : null),
+                ImageUrl = dto.ImageUrl,
+                Instructions = instructions,
+                PrepTimeMinutes = dto.PrepTimeMinutes > 0 ? dto.PrepTimeMinutes : 15,
+                Servings = dto.Servings > 0 ? dto.Servings : 1,
+                CreatedByUserId = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var defaultCategory = await _context.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == "inne")
+                                  ?? await _context.Categories.FirstOrDefaultAsync();
+
+            foreach (var ingDto in dto.Ingredients.Where(i => !string.IsNullOrWhiteSpace(i.Name)))
+            {
+                var normalizedName = ingDto.Name.Trim().ToLower();
+                var (parsedQty, parsedUnit) = ParseQuantityAndUnit(ingDto.Quantity);
+
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.Name.ToLower() == normalizedName);
+
+                if (product == null)
+                {
+                    product = new Product
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = ingDto.Name.Trim(),
+                        CategoryId = defaultCategory?.Id ?? Guid.NewGuid(),
+                        DefaultUnit = parsedUnit,
+                        CreatedByUserId = userId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Products.Add(product);
+                    await _context.SaveChangesAsync(); 
+                }
+
+                recipe.Ingredients.Add(new RecipeIngredient
+                {
+                    Id = Guid.NewGuid(),
+                    RecipeId = recipe.Id,
+                    ProductId = product.Id,
+                    Quantity = parsedQty,
+                    Unit = parsedUnit,
+                    IsOptional = false
+                });
+            }
+
+            _context.Recipes.Add(recipe);
+
+            _context.UserRecipeInteractions.Add(new UserRecipeInteraction
+            {
+                UserId = userId,
+                RecipeId = recipe.Id,
+                IsFavorite = true,
+                FavoritedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+
+            var detailDto = new RecipeDetailDto
+            {
+                Id = recipe.Id,
+                Title = recipe.Title,
+                Description = recipe.Description,
+                Instructions = recipe.Instructions,
+                ImageUrl = recipe.ImageUrl,
+                PrepTimeMinutes = recipe.PrepTimeMinutes,
+                Servings = recipe.Servings,
+                IsFavorite = true,
+                LikesCount = 0,
+                DislikesCount = 0,
+                UserVote = null,
+                Ingredients = recipe.Ingredients.Select(i => new RecipeIngredientDto
+                {
+                    ProductId = i.ProductId,
+                    ProductName = i.Product?.Name ?? "Składnik",
+                    Quantity = i.Quantity,
+                    Unit = i.Unit,
+                    IsOptional = false,
+                    IsOwnedInPantry = true
+                }).ToList()
+            };
+
+            return ServiceResult<RecipeDetailDto>.Success(detailDto);
+        }
+
+        private static (decimal quantity, string unit) ParseQuantityAndUnit(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return (1m, "szt.");
+
+            input = input.Trim().Replace(',', '.');
+            var match = System.Text.RegularExpressions.Regex.Match(input, @"^([0-9]+(?:\.[0-9]+)?)\s*(.*)$");
+
+            if (match.Success && decimal.TryParse(
+                match.Groups[1].Value,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var qty))
+            {
+                var unit = match.Groups[2].Value.Trim();
+                return (qty, string.IsNullOrEmpty(unit) ? "szt." : unit);
+            }
+
+            return (1m, "szt.");
+        }
     }
 }

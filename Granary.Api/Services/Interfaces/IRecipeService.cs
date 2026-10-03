@@ -10,5 +10,6 @@ namespace Granary.Api.Services.Interfaces
         Task<ServiceResult<bool>> ToggleFavoriteAsync(Guid recipeId, Guid userId);
         Task<ServiceResult<VoteResultDto>> VoteRecipeAsync(Guid recipeId, Guid userId, bool isLike);
         Task<ServiceResult<IEnumerable<RecipeMatchDto>>> GetFavoritesAsync(Guid userId);
+        Task<ServiceResult<RecipeDetailDto>> CreateCustomRecipeAsync(CreateCustomRecipeDto dto, Guid userId);
     }
 }
