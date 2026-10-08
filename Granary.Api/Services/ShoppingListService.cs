@@ -12,11 +12,13 @@ namespace Granary.Api.Services.Shopping
     {
         private readonly GranaryDbContext _dbContext;
         private readonly ILogger<ShoppingListService> _logger;
+        private readonly ICatalogProductService _catalogService;
 
-        public ShoppingListService(GranaryDbContext dbContext, ILogger<ShoppingListService> logger)
+        public ShoppingListService(GranaryDbContext dbContext, ILogger<ShoppingListService> logger, ICatalogProductService catalogService)
         {
             _dbContext = dbContext;
             _logger = logger;
+            _catalogService = catalogService;
         }
 
         #region Zarządzanie Listami
@@ -260,7 +262,7 @@ namespace Granary.Api.Services.Shopping
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
-                    ProductId = item.ProductId ?? (await GetOrCreateCustomProduct(userId, item.Name, item.Unit)),
+                    ProductId = item.ProductId ?? await _catalogService.GetOrCreateCustomProductAsync(userId, item.Name, unit: item.Unit),
                     StorageLocation = dto.DestinationLocation, 
                     Status = PantryItemStatus.Active,
                     Quantity = item.Quantity,
@@ -279,25 +281,6 @@ namespace Granary.Api.Services.Shopping
             _logger.LogInformation("Przeniesiono masowo {Count} produktów z listy zakupów do {Location}", itemsToTransfer.Count, dto.DestinationLocation);
 
             return ServiceResult<bool>.Success(true);
-        }
-
-        private async Task<Guid> GetOrCreateCustomProduct(Guid userId, string name, string? unit)
-        {
-            var existing = await _dbContext.Products.FirstOrDefaultAsync(p => p.CreatedByUserId == userId && p.Name.ToLower() == name.ToLower());
-            if (existing != null) return existing.Id;
-
-            var defaultCat = await _dbContext.Categories.OrderBy(c => c.DisplayOrder).FirstAsync();
-            var newProd = new Product
-            {
-                Id = Guid.NewGuid(),
-                Name = name,
-                CategoryId = defaultCat.Id,
-                DefaultUnit = unit ?? "szt.",
-                CreatedByUserId = userId
-            };
-            _dbContext.Products.Add(newProd);
-            await _dbContext.SaveChangesAsync();
-            return newProd.Id;
         }
 
         #endregion

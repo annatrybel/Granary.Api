@@ -11,6 +11,7 @@
         public int Servings { get; set; }
 
         public bool IsFavorite { get; set; }
+        public bool IsCustom { get; set; }
         public int LikesCount { get; set; }
         public int DislikesCount { get; set; }
         public bool? UserVote { get; set; }

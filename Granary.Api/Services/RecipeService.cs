@@ -1,7 +1,8 @@
-﻿using Granary.Api.Models;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
+using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Recipes;
-using Granary.Api.Models.Dto;
 using Granary.Api.Models.Enums;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
@@ -20,8 +21,11 @@ namespace Granary.Api.Services
             _logger = logger;
         }
 
-        public async Task<ServiceResult<IEnumerable<RecipeMatchDto>>> GetSuggestedRecipesAsync(Guid userId, IEnumerable<Guid>? selectedProductIds = null)
+        public async Task<ServiceResult<PagedRecipesResultDto>> GetFilteredRecipesAsync(Guid userId, RecipeFilterQueryDto filter)
         {
+            var page = filter.Page < 1 ? 1 : filter.Page;
+            var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
+
             var userPantry = await _context.PantryItems
                 .AsNoTracking()
                 .Where(pi => pi.UserId == userId && pi.Status == PantryItemStatus.Active)
@@ -32,40 +36,92 @@ namespace Granary.Api.Services
                 })
                 .ToListAsync();
 
-            HashSet<Guid> targetProductIds;
+            var userProductIds = userPantry.Select(p => p.ProductId).ToHashSet();
             var expiringProductIds = userPantry.Where(p => p.IsExpiringSoon).Select(p => p.ProductId).ToHashSet();
 
-            if (selectedProductIds != null && selectedProductIds.Any())
+            HashSet<Guid> targetProductIds;
+            bool hasSelectedItemsFilter = false;
+
+            if (!string.IsNullOrWhiteSpace(filter.Items))
             {
-                targetProductIds = selectedProductIds.ToHashSet();
+                var parsedIds = filter.Items
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(s => Guid.TryParse(s, out var id) ? id : Guid.Empty)
+                    .Where(id => id != Guid.Empty)
+                    .ToHashSet();
+
+                if (parsedIds.Any())
+                {
+                    targetProductIds = parsedIds;
+                    hasSelectedItemsFilter = true;
+                }
+                else
+                {
+                    targetProductIds = userProductIds;
+                }
             }
             else
             {
-                targetProductIds = userPantry.Select(p => p.ProductId).ToHashSet();
+                targetProductIds = userProductIds;
             }
-
             var userInteractions = await _context.UserRecipeInteractions
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
                 .ToDictionaryAsync(x => x.RecipeId);
 
-            var recipes = await _context.Recipes
+            var favRecipeIds = userInteractions
+                .Where(x => x.Value.IsFavorite)
+                .Select(x => x.Key)
+                .ToHashSet();
+
+            var recipesQuery = _context.Recipes
                 .AsNoTracking()
                 .Include(r => r.Ingredients)
                     .ThenInclude(ri => ri.Product)
-                .ToListAsync();
+                .AsQueryable();
 
-            var matched = recipes.Select(recipe =>
+            var scope = filter.Scope?.ToLower().Trim();
+            if (scope == "favorites")
+            {
+                recipesQuery = recipesQuery.Where(r => favRecipeIds.Contains(r.Id));
+            }
+            else if (scope == "custom")
+            {
+                recipesQuery = recipesQuery.Where(r => r.CreatedByUserId == userId);
+            }
+            else
+            {
+                recipesQuery = recipesQuery.Where(r => r.CreatedByUserId == null || r.CreatedByUserId == userId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Query))
+            {
+                var normalized = filter.Query.Trim().ToLower();
+                recipesQuery = recipesQuery.Where(r =>
+                    r.Title.ToLower().Contains(normalized) ||
+                    (r.Description != null && r.Description.ToLower().Contains(normalized)) ||
+                    r.Ingredients.Any(i => i.Product.Name.ToLower().Contains(normalized))
+                );
+            }
+
+            if (filter.MaxTime.HasValue && filter.MaxTime.Value > 0)
+            {
+                recipesQuery = recipesQuery.Where(r => r.PrepTimeMinutes <= filter.MaxTime.Value);
+            }
+
+            var matchingRecipes = await recipesQuery.ToListAsync();
+
+            var processed = matchingRecipes.Select(recipe =>
             {
                 var requiredIngredients = recipe.Ingredients.Where(i => !i.IsOptional).ToList();
                 var totalCount = requiredIngredients.Count;
 
                 var owned = requiredIngredients
-                    .Where(i => targetProductIds.Contains(i.ProductId))
+                    .Where(i => userProductIds.Contains(i.ProductId))
                     .ToList();
 
                 var missing = requiredIngredients
-                    .Where(i => !targetProductIds.Contains(i.ProductId))
+                    .Where(i => !userProductIds.Contains(i.ProductId))
                     .Select(i => new MissingIngredientDto
                     {
                         ProductId = i.ProductId,
@@ -76,9 +132,8 @@ namespace Granary.Api.Services
                     .ToList();
 
                 var ownedCount = owned.Count;
-                var matchPct = totalCount > 0 ? (int)Math.Round((double)ownedCount / totalCount * 100) : 0;
+                var matchPct = totalCount > 0 ? (int)Math.Round((double)ownedCount / totalCount * 100) : 100;
                 var expiringSaved = owned.Count(i => expiringProductIds.Contains(i.ProductId));
-
                 var summary = string.Join(", ", owned.Take(3).Select(i => i.Product?.Name).Where(n => !string.IsNullOrEmpty(n)));
 
                 userInteractions.TryGetValue(recipe.Id, out var interaction);
@@ -96,18 +151,58 @@ namespace Granary.Api.Services
                     TotalIngredientsCount = totalCount,
                     ExpiringIngredientsSaved = expiringSaved,
                     CanBeCookedNow = missing.Count == 0,
-                    IsFavorite = interaction?.IsFavorite ?? false, 
-                    UsedIngredientsSummary = string.IsNullOrEmpty(summary) ? "Brak składników ze spiżarni" : $"Wykorzystasz: {summary}",
+                    IsFavorite = interaction?.IsFavorite ?? false,
+                    IsCustom = recipe.CreatedByUserId == userId,
+                    UsedIngredientsSummary = summary,
                     MissingIngredients = missing
                 };
-            })
-            .Where(r => r.OwnedIngredientsCount > 0 || !targetProductIds.Any())
-            .OrderByDescending(r => r.CanBeCookedNow)
-            .ThenByDescending(r => r.ExpiringIngredientsSaved)
-            .ThenByDescending(r => r.MatchPercentage)
-            .ToList();
+            });
 
-            return ServiceResult<IEnumerable<RecipeMatchDto>>.Success(matched);
+            IOrderedEnumerable<RecipeMatchDto> sorted;
+            if (hasSelectedItemsFilter)
+            {
+                sorted = processed
+                    .OrderByDescending(r => r.OwnedIngredientsCount) 
+                    .ThenByDescending(r => r.CanBeCookedNow)
+                    .ThenByDescending(r => r.MatchPercentage)
+                    .ThenBy(r => r.Title);
+            }
+            else
+            {
+                switch (filter.SortBy?.ToLower())
+                {
+                    case "time":
+                        sorted = processed.OrderBy(r => r.PrepTimeMinutes);
+                        break;
+                    case "match":
+                    default:
+                        sorted = processed
+                            .OrderByDescending(r => r.CanBeCookedNow)
+                            .ThenByDescending(r => r.ExpiringIngredientsSaved)
+                            .ThenByDescending(r => r.MatchPercentage)
+                            .ThenBy(r => r.Title);
+                        break;
+                }
+            }
+
+            var list = sorted.ToList();
+            var totalCount = list.Count;
+
+            var pagedItems = list
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var result = new PagedRecipesResultDto
+            {
+                Items = pagedItems,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                HasMore = (page * pageSize) < totalCount
+            };
+
+            return ServiceResult<PagedRecipesResultDto>.Success(result);
         }
 
         public async Task<ServiceResult<RecipeDetailDto>> GetByIdAsync(Guid recipeId, Guid userId)
@@ -149,6 +244,7 @@ namespace Granary.Api.Services
                 PrepTimeMinutes = recipe.PrepTimeMinutes,
                 Servings = recipe.Servings,
                 IsFavorite = userInteraction?.IsFavorite ?? false,
+                IsCustom = recipe.CreatedByUserId == userId,
                 LikesCount = allVotes.Count(v => v == true),
                 DislikesCount = allVotes.Count(v => v == false),
                 UserVote = userInteraction?.Vote,
@@ -253,38 +349,13 @@ namespace Granary.Api.Services
             });
         }
 
-        public async Task<ServiceResult<IEnumerable<RecipeMatchDto>>> GetFavoritesAsync(Guid userId)
-        {
-            var favRecipeIds = await _context.UserRecipeInteractions
-                .AsNoTracking()
-                .Where(x => x.UserId == userId && x.IsFavorite)
-                .Select(x => x.RecipeId)
-                .ToListAsync();
-
-            var recipes = await _context.Recipes
-                .AsNoTracking()
-                .Where(r => r.CreatedByUserId == userId || favRecipeIds.Contains(r.Id))
-                .Select(r => new RecipeMatchDto
-                {
-                    RecipeId = r.Id,
-                    Title = r.Title,
-                    Description = r.Description,
-                    ImageUrl = r.ImageUrl,
-                    PrepTimeMinutes = r.PrepTimeMinutes,
-                    Servings = r.Servings,
-                    IsFavorite = true
-                })
-                .ToListAsync();
-
-            return ServiceResult<IEnumerable<RecipeMatchDto>>.Success(recipes);
-        }
-
         public async Task<ServiceResult<RecipeDetailDto>> CreateCustomRecipeAsync(CreateCustomRecipeDto dto, Guid userId)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
             {
                 return ServiceResult<RecipeDetailDto>.Failure("Nazwa przepisu nie może być pusta.");
             }
+
             var instructions = dto.Steps != null && dto.Steps.Any()
                 ? string.Join("\n", dto.Steps.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()))
                 : "Brak szczegółowej instrukcji.";
@@ -309,25 +380,33 @@ namespace Granary.Api.Services
 
             foreach (var ingDto in dto.Ingredients.Where(i => !string.IsNullOrWhiteSpace(i.Name)))
             {
-                var normalizedName = ingDto.Name.Trim().ToLower();
                 var (parsedQty, parsedUnit) = ParseQuantityAndUnit(ingDto.Quantity);
+                Product? product = null;
 
-                var product = await _context.Products
-                    .FirstOrDefaultAsync(p => p.Name.ToLower() == normalizedName);
+                if (ingDto.ProductId.HasValue && ingDto.ProductId.Value != Guid.Empty)
+                {
+                    product = await _context.Products.FirstOrDefaultAsync(p => p.Id == ingDto.ProductId.Value);
+                }
 
                 if (product == null)
                 {
-                    product = new Product
+                    var normalizedName = ingDto.Name.Trim().ToLower();
+                    product = await _context.Products.FirstOrDefaultAsync(p => p.Name.ToLower() == normalizedName);
+
+                    if (product == null)
                     {
-                        Id = Guid.NewGuid(),
-                        Name = ingDto.Name.Trim(),
-                        CategoryId = defaultCategory?.Id ?? Guid.NewGuid(),
-                        DefaultUnit = parsedUnit,
-                        CreatedByUserId = userId,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    _context.Products.Add(product);
-                    await _context.SaveChangesAsync(); 
+                        product = new Product
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = ingDto.Name.Trim(),
+                            CategoryId = defaultCategory?.Id ?? Guid.NewGuid(),
+                            DefaultUnit = parsedUnit,
+                            CreatedByUserId = userId,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.Products.Add(product);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 recipe.Ingredients.Add(new RecipeIngredient
@@ -342,16 +421,7 @@ namespace Granary.Api.Services
             }
 
             _context.Recipes.Add(recipe);
-
-            _context.UserRecipeInteractions.Add(new UserRecipeInteraction
-            {
-                UserId = userId,
-                RecipeId = recipe.Id,
-                IsFavorite = true,
-                FavoritedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            });
-
+                        
             await _context.SaveChangesAsync();
 
             var detailDto = new RecipeDetailDto
@@ -383,23 +453,137 @@ namespace Granary.Api.Services
 
         private static (decimal quantity, string unit) ParseQuantityAndUnit(string input)
         {
-            if (string.IsNullOrWhiteSpace(input))
-                return (1m, "szt.");
-
+            if (string.IsNullOrWhiteSpace(input)) return (1m, "szt.");
             input = input.Trim().Replace(',', '.');
-            var match = System.Text.RegularExpressions.Regex.Match(input, @"^([0-9]+(?:\.[0-9]+)?)\s*(.*)$");
+            var match = Regex.Match(input, @"^([0-9]+(?:\.[0-9]+)?)\s*(.*)$");
 
-            if (match.Success && decimal.TryParse(
-                match.Groups[1].Value,
-                System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var qty))
+            if (match.Success && decimal.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var qty))
             {
                 var unit = match.Groups[2].Value.Trim();
                 return (qty, string.IsNullOrEmpty(unit) ? "szt." : unit);
             }
 
             return (1m, "szt.");
+        }
+
+        public async Task<ServiceResult<bool>> DeleteRecipeAsync(Guid recipeId, Guid userId)
+        {
+            var recipe = await _context.Recipes
+                .Include(r => r.Ingredients)
+                .FirstOrDefaultAsync(r => r.Id == recipeId);
+
+            if (recipe == null)
+            {
+                return ServiceResult<bool>.Failure("Przepis nie istnieje.");
+            }
+
+            if (recipe.CreatedByUserId != userId)
+            {
+                return ServiceResult<bool>.Failure("Brak uprawnień do usunięcia tego przepisu.");
+            }
+
+            var interactions = await _context.UserRecipeInteractions.Where(x => x.RecipeId == recipeId).ToListAsync();
+            _context.UserRecipeInteractions.RemoveRange(interactions);
+            _context.RecipeIngredients.RemoveRange(recipe.Ingredients);
+            _context.Recipes.Remove(recipe);
+
+            await _context.SaveChangesAsync();
+            return ServiceResult<bool>.Success(true);
+        }
+
+        public async Task<ServiceResult<RecipeDetailDto>> UpdateCustomRecipeAsync(Guid recipeId, CreateCustomRecipeDto dto, Guid userId)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title))
+            {
+                return ServiceResult<RecipeDetailDto>.Failure("Nazwa przepisu nie może być pusta.");
+            }
+
+            var recipe = await _context.Recipes
+                .FirstOrDefaultAsync(r => r.Id == recipeId);
+
+            if (recipe == null)
+            {
+                return ServiceResult<RecipeDetailDto>.Failure("Przepis nie istnieje.");
+            }
+
+            if (recipe.CreatedByUserId != userId)
+            {
+                return ServiceResult<RecipeDetailDto>.Failure("Brak uprawnień do edycji tego przepisu.");
+            }
+
+            var instructions = dto.Steps != null && dto.Steps.Any()
+                ? string.Join("\n", dto.Steps.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()))
+                : recipe.Instructions;
+
+            recipe.Title = dto.Title.Trim();
+            recipe.Description = !string.IsNullOrWhiteSpace(dto.Category) ? $"Kategoria: {dto.Category}" : dto.Description;
+            recipe.Instructions = instructions;
+            recipe.PrepTimeMinutes = dto.PrepTimeMinutes > 0 ? dto.PrepTimeMinutes : recipe.PrepTimeMinutes;
+            recipe.Servings = dto.Servings > 0 ? dto.Servings : recipe.Servings;
+            if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+            {
+                recipe.ImageUrl = dto.ImageUrl;
+            }
+
+            var oldIngredients = await _context.RecipeIngredients
+                .Where(ri => ri.RecipeId == recipeId)
+                .ToListAsync();
+            _context.RecipeIngredients.RemoveRange(oldIngredients);
+
+            var defaultCategory = await _context.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == "inne")
+                                  ?? await _context.Categories.FirstOrDefaultAsync();
+            var defaultCategoryId = defaultCategory?.Id ?? Guid.NewGuid();
+
+            var newIngredients = new List<RecipeIngredient>();
+
+            foreach (var ingDto in dto.Ingredients.Where(i => !string.IsNullOrWhiteSpace(i.Name)))
+            {
+                var (parsedQty, parsedUnit) = ParseQuantityAndUnit(ingDto.Quantity);
+                Product? product = null;
+
+                if (ingDto.ProductId.HasValue && ingDto.ProductId.Value != Guid.Empty)
+                {
+                    product = await _context.Products.FirstOrDefaultAsync(p => p.Id == ingDto.ProductId.Value);
+                }
+
+                if (product == null)
+                {
+                    var normalizedName = ingDto.Name.Trim().ToLower();
+                    product = await _context.Products.FirstOrDefaultAsync(p =>
+                        p.Name.ToLower() == normalizedName &&
+                        (p.CreatedByUserId == null || p.CreatedByUserId == userId));
+
+                    if (product == null)
+                    {
+                        product = new Product
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = ingDto.Name.Trim(),
+                            CategoryId = defaultCategoryId,
+                            DefaultUnit = parsedUnit,
+                            CreatedByUserId = userId,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.Products.Add(product);
+                    }
+                }
+
+                newIngredients.Add(new RecipeIngredient
+                {
+                    Id = Guid.NewGuid(),
+                    RecipeId = recipe.Id,
+                    ProductId = product.Id,
+                    Quantity = parsedQty,
+                    Unit = parsedUnit,
+                    IsOptional = false
+                });
+            }
+
+            await _context.RecipeIngredients.AddRangeAsync(newIngredients);
+
+            await _context.SaveChangesAsync();
+
+            return await GetByIdAsync(recipe.Id, userId);
         }
     }
 }

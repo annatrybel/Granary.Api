@@ -1,6 +1,4 @@
-﻿using Granary.Api.Models.Enums;
-
-namespace Granary.Api.Models.Dto.Recipes
+﻿namespace Granary.Api.Models.Dto.Recipes
 {
     public class RecipeMatchDto
     {
@@ -18,10 +16,9 @@ namespace Granary.Api.Models.Dto.Recipes
         public bool CanBeCookedNow { get; set; }
 
         public bool IsFavorite { get; set; }
+        public bool IsCustom { get; set; }
 
         public string UsedIngredientsSummary { get; set; } = string.Empty;
-
-        public string DurationAndPortions => $"{PrepTimeMinutes} min • {Servings} {(Servings == 1 ? "porcja" : "porcje")}";
 
         public List<MissingIngredientDto> MissingIngredients { get; set; } = new();
     }
