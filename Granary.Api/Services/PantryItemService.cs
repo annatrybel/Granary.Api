@@ -1,6 +1,7 @@
 ﻿using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto;
+using Granary.Api.Models.Dto.Pantry;
 using Granary.Api.Models.Enums;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
@@ -12,11 +13,13 @@ namespace Granary.Api.Services
     {
         private readonly GranaryDbContext _dbContext;
         private readonly ILogger<PantryItemService> _logger;
+        private readonly ICatalogProductService _catalogService;
 
-        public PantryItemService(GranaryDbContext dbContext, ILogger<PantryItemService> logger)
+        public PantryItemService(GranaryDbContext dbContext, ILogger<PantryItemService> logger, ICatalogProductService catalogService)
         {
             _dbContext = dbContext;
             _logger = logger;
+            _catalogService = catalogService;
         }
 
         public async Task<ServiceResult<IEnumerable<PantryItemDto>>> GetUserItemsAsync(Guid userId, StorageLocation? location = null)
@@ -56,7 +59,6 @@ namespace Granary.Api.Services
         {
             Guid targetProductId;
 
-            // 1. SCENARIUSZ: PRODUKT Z KATALOGU
             if (dto.ProductId.HasValue && dto.ProductId.Value != Guid.Empty)
             {
                 var productExists = await _dbContext.Products.AnyAsync(p => p.Id == dto.ProductId.Value);
@@ -66,7 +68,6 @@ namespace Granary.Api.Services
                 }
                 targetProductId = dto.ProductId.Value;
             }
-            // 2. SCENARIUSZ: WŁASNY PRODUKT (CUSTOM)
             else if (!string.IsNullOrWhiteSpace(dto.CustomProductName))
             {
                 var trimmedName = dto.CustomProductName.Trim();
@@ -81,7 +82,6 @@ namespace Granary.Api.Services
                 }
                 else
                 {
-                    // Jeśli nie wybrano kategorii, bierzemy kategorię "Inne" lub pierwszą lepszą z bazy:
                     Guid categoryId;
                     if (dto.CustomCategoryId.HasValue && dto.CustomCategoryId.Value != Guid.Empty)
                     {
@@ -90,7 +90,7 @@ namespace Granary.Api.Services
                     else
                     {
                         var defaultCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "Inne")
-                                           ?? await _dbContext.Categories.FirstOrDefaultAsync();
+                                           ?? await _dbContext.Categories.OrderBy(c => c.DisplayOrder).FirstOrDefaultAsync();
 
                         if (defaultCategory == null)
                         {
@@ -104,7 +104,7 @@ namespace Granary.Api.Services
                         Id = Guid.NewGuid(),
                         Name = trimmedName,
                         CategoryId = categoryId,
-                        ImageUrl = dto.CustomImageUrl, 
+                        ImageUrl = dto.CustomImageUrl,
                         DefaultUnit = !string.IsNullOrWhiteSpace(dto.Unit) ? dto.Unit : "szt.",
                         CreatedByUserId = userId
                     };
@@ -116,6 +116,28 @@ namespace Granary.Api.Services
             else
             {
                 return ServiceResult<PantryItemDto>.Failure("Musisz wybrać produkt z katalogu lub podać nazwę własnego produktu.");
+            }
+
+            var existingItem = await _dbContext.PantryItems
+                .FirstOrDefaultAsync(pi => pi.UserId == userId
+                                        && pi.ProductId == targetProductId
+                                        && pi.StorageLocation == dto.Location
+                                        && pi.Status == PantryItemStatus.Active);
+
+            if (existingItem != null)
+            {
+                existingItem.Quantity += dto.Quantity > 0 ? dto.Quantity : 1;
+
+                if (dto.ExpirationDate != default)
+                {
+                    existingItem.ExpirationDate = dto.ExpirationDate;
+                }
+
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("Użytkownik {UserId} zwiększył ilość produktu {ProductId} w {Location} do {Quantity}",
+                    userId, targetProductId, dto.Location, existingItem.Quantity);
+
+                return await GetByIdAsync(userId, existingItem.Id);
             }
 
             var pantryItem = new PantryItem
@@ -135,7 +157,8 @@ namespace Granary.Api.Services
             _dbContext.PantryItems.Add(pantryItem);
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation("Użytkownik {UserId} dodał produkt do {Location}", userId, dto.Location);
+            _logger.LogInformation("Użytkownik {UserId} dodał nowy produkt {ProductId} do {Location}",
+                userId, targetProductId, dto.Location);
 
             return await GetByIdAsync(userId, pantryItem.Id);
         }
@@ -168,28 +191,7 @@ namespace Granary.Api.Services
             return await GetByIdAsync(userId, item.Id);
         }
 
-        public async Task<ServiceResult<bool>> ChangeStatusAsync(Guid userId, Guid pantryItemId, PantryItemStatus newStatus)
-        {
-            var item = await _dbContext.PantryItems.FirstOrDefaultAsync(pi => pi.Id == pantryItemId);
-
-            if (item == null)
-            {
-                return ServiceResult<bool>.Failure("Nie znaleziono wskazanego produktu w Twojej spiżarni.");
-            }
-
-            if (item.UserId != userId)
-            {
-                return ServiceResult<bool>.Failure("Brak uprawnień do zmiany statusu tego produktu.");
-            }
-
-            item.Status = newStatus;
-            await _dbContext.SaveChangesAsync();
-
-            _logger.LogInformation("Użytkownik {UserId} zmienił status produktu {PantryItemId} na {Status}", userId, pantryItemId, newStatus);
-
-            return ServiceResult<bool>.Success(true);
-        }
-
+       
         public async Task<ServiceResult<bool>> DeleteItemAsync(Guid userId, Guid pantryItemId)
         {
             var item = await _dbContext.PantryItems
@@ -254,6 +256,37 @@ namespace Granary.Api.Services
 
             if (item == null) return ServiceResult<PantryItemDto>.Failure("Nie znaleziono produktu.");
             return ServiceResult<PantryItemDto>.Success(item);
+        }
+
+        public async Task<ServiceResult<IEnumerable<ExpiringPantryItemDto>>> GetExpiringItemsAsync(Guid userId, int days = 4, int limit = 10)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var maxDate = today.AddDays(days);
+
+            var items = await _dbContext.PantryItems
+                .AsNoTracking()
+                .Include(pi => pi.Product)
+                    .ThenInclude(p => p.Category)
+                .Where(pi => pi.UserId == userId
+                          && pi.Status == PantryItemStatus.Active
+                          && pi.ExpirationDate != default
+                          && pi.ExpirationDate <= maxDate)
+                .OrderBy(pi => pi.ExpirationDate)
+                .Take(limit)
+                .Select(pi => new ExpiringPantryItemDto
+                {
+                    Id = pi.Id,
+                    ProductName = pi.Product.Name,
+                    ProductImageUrl = pi.Product.ImageUrl,
+                    CategoryName = pi.Product.Category.Name,
+                    CategoryImageUrl = pi.Product.Category.ImageUrl,
+                    StorageLocation = pi.StorageLocation,
+                    ExpirationDate = pi.ExpirationDate,
+                    DaysLeft = pi.ExpirationDate.DayNumber - today.DayNumber
+                })
+                .ToListAsync();
+
+            return ServiceResult<IEnumerable<ExpiringPantryItemDto>>.Success(items);
         }
     }
 }

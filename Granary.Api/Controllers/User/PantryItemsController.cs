@@ -62,5 +62,17 @@ namespace Granary.Api.Controllers.Mobile
             var result = await _pantryService.DeleteItemAsync(userId, id);
             return HandleServiceResult(result);
         }
+
+
+        /// <summary>
+        /// Pobiera produkty z krótką datą ważności dla Dashboardu (domyślnie do 4 dni).
+        /// </summary>
+        [HttpGet("expiring")]
+        public async Task<IActionResult> GetExpiringItems([FromQuery] int days = 4, [FromQuery] int limit = 10)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _pantryService.GetExpiringItemsAsync(userId, days, limit);
+            return HandleServiceResult(result);
+        }
     }
 }

@@ -12,9 +12,11 @@ namespace Granary.Api.Models.DatabaseModels
         [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
-        [MaxLength(50)]
-        public string? IconSlug { get; set; } 
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
         public int DisplayOrder { get; set; } = 0;
+
         public ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto;
+using Granary.Api.Models.Dto.Catalog;
+using Granary.Api.Models.Enums;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.EntityFrameworkCore;
@@ -32,13 +34,28 @@ namespace Granary.Api.Services.Catalog
             CreatedByUserId = p.CreatedByUserId
         };
 
-        public async Task<ServiceResult<IEnumerable<CatalogProductDto>>> SearchAsync(string? query, Guid? categoryId, Guid? currentUserId = null)
+        public async Task<ServiceResult<IEnumerable<CatalogProductDto>>> SearchAsync(
+            string? query,
+            Guid? categoryId,
+            Guid? currentUserId = null,
+            bool excludePantry = false) 
         {
             var dbQuery = _dbContext.Products.AsNoTracking();
 
             if (currentUserId.HasValue)
             {
                 dbQuery = dbQuery.Where(p => p.CreatedByUserId == null || p.CreatedByUserId == currentUserId.Value);
+
+                if (excludePantry)
+                {
+                    var userActiveProductIds = await _dbContext.PantryItems
+                        .AsNoTracking()
+                        .Where(pi => pi.UserId == currentUserId.Value && pi.Status == PantryItemStatus.Active)
+                        .Select(pi => pi.ProductId)
+                        .ToListAsync();
+
+                    dbQuery = dbQuery.Where(p => !userActiveProductIds.Contains(p.Id));
+                }
             }
             else
             {
@@ -122,7 +139,7 @@ namespace Granary.Api.Services.Catalog
                 ImageUrl = createDto.ImageUrl,
                 DefaultUnit = createDto.DefaultUnit ?? "szt.",
                 DefaultShelfLifeDays = createDto.DefaultShelfLifeDays,
-                CreatedByUserId = currentUserId 
+                CreatedByUserId = currentUserId
             };
 
             _dbContext.Products.Add(product);
@@ -187,6 +204,68 @@ namespace Granary.Api.Services.Catalog
             _logger.LogInformation("Usunięto produkt z katalogu o ID: {ProductId}", id);
 
             return ServiceResult<bool>.Success(true);
+        }
+
+        public async Task<ServiceResult<IEnumerable<CategoryDto>>> GetCategoriesAsync()
+        {
+            var categories = await _dbContext.Categories
+                .AsNoTracking()
+                .OrderBy(c => c.DisplayOrder)
+                .Select(c => new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    ImageUrl = c.ImageUrl,
+                    DisplayOrder = c.DisplayOrder
+                })
+                .ToListAsync();
+
+            return ServiceResult<IEnumerable<CategoryDto>>.Success(categories);
+        }
+
+        public async Task<Guid> GetOrCreateCustomProductAsync(
+            Guid userId,
+            string name,
+            Guid? categoryId = null,
+            string? unit = null,
+            string? imageUrl = null)
+        {
+            var trimmedName = name.Trim();
+            var existing = await _dbContext.Products
+                .FirstOrDefaultAsync(p => p.CreatedByUserId == userId && p.Name.ToLower() == trimmedName.ToLower());
+
+            if (existing != null)
+            {
+                return existing.Id;
+            }
+
+            Guid targetCategoryId;
+            if (categoryId.HasValue && categoryId.Value != Guid.Empty)
+            {
+                targetCategoryId = categoryId.Value;
+            }
+            else
+            {
+                var defaultCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "Inne")
+                                   ?? await _dbContext.Categories.OrderBy(c => c.DisplayOrder).FirstOrDefaultAsync();
+
+                targetCategoryId = defaultCategory?.Id ?? Guid.Empty;
+            }
+
+            var newProduct = new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = trimmedName,
+                CategoryId = targetCategoryId,
+                ImageUrl = imageUrl,
+                DefaultUnit = !string.IsNullOrWhiteSpace(unit) ? unit : "szt.",
+                CreatedByUserId = userId
+            };
+
+            _dbContext.Products.Add(newProduct);
+            await _dbContext.SaveChangesAsync();
+
+            return newProduct.Id;
         }
     }
 }
