@@ -26,13 +26,6 @@ namespace Granary.Api.Seeders
             }
 
             var categoryMap = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
-            foreach (var cat in categories)
-            {
-                if (!string.IsNullOrEmpty(cat.IconSlug))
-                    categoryMap[cat.IconSlug] = cat.Id;
-
-                categoryMap[cat.Name] = cat.Id;
-            }
 
             var defaultCategoryId = categories.First().Id;
 

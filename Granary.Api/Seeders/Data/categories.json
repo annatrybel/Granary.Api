@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Nabiał i Jaja",
+    "imageUrl": "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 1
+  },
+  {
+    "name": "Pieczywo",
+    "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 2
+  },
+  {
+    "name": "Owoce i Warzywa",
+    "imageUrl": "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 3
+  },
+  {
+    "name": "Mięso i Wędliny",
+    "imageUrl": "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 4
+  },
+  {
+    "name": "Mrożonki",
+    "imageUrl": "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 5
+  },
+  {
+    "name": "Spiżarnia i Suche",
+    "imageUrl": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 6
+  },
+  {
+    "name": "Inne",
+    "imageUrl": null,
+    "displayOrder": 99
+  }
+]

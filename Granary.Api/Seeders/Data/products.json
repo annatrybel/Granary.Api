@@ -8,194 +8,795 @@
     "barcode": "5900820000018"
   },
   {
-    "name": "Jajka (M/L)",
-    "categorySlug": "dairy",
-    "imageUrl": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 21
-  },
-  {
-    "name": "Ser Żółty",
-    "categorySlug": "dairy",
-    "imageUrl": "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 14
-  },
-  {
-    "name": "Masło Extra",
+    "name": "Masło ekstra 82%",
     "categorySlug": "dairy",
     "imageUrl": "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 30
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 21,
+    "barcode": "5900820000025"
   },
   {
-    "name": "Twaróg Półtłusty",
+    "name": "Ser Gouda w plastrach",
     "categorySlug": "dairy",
-    "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 7
+    "imageUrl": "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 28,
+    "barcode": "5900820000032"
+  },
+  {
+    "name": "Twaróg półtłusty",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1559561853-08451507cbe7?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 10,
+    "barcode": "5900820000049"
+  },
+  {
+    "name": "Jogurt naturalny",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000056"
   },
   {
     "name": "Śmietana 18%",
     "categorySlug": "dairy",
-    "imageUrl": "https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 14
+    "imageUrl": "https://images.unsplash.com/photo-1576186726580-a816e8b12896?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000063"
   },
   {
-    "name": "Jogurt Naturalny",
+    "name": "Ser Mozzarella",
     "categorySlug": "dairy",
-    "imageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 14
+    "imageUrl": "https://images.unsplash.com/photo-1592417817098-8f3d6910985b?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000070"
   },
   {
-    "name": "Mozzarella",
+    "name": "Jaja ściółkowe M (10 szt.)",
     "categorySlug": "dairy",
-    "imageUrl": "https://images.unsplash.com/photo-1592417817098-8f3d69102353?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 10
+    "imageUrl": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 21,
+    "barcode": "5900820000087"
   },
   {
-    "name": "Chleb Pszenno-Żytni",
+    "name": "Kefir naturalny",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000094"
+  },
+  {
+    "name": "Ser Parmigiano Reggiano",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 45,
+    "barcode": "5900820000100"
+  },
+  {
+    "name": "Chleb pszenno-żytni",
     "categorySlug": "bakery",
     "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 3
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 4,
+    "barcode": "5900820000117"
   },
   {
-    "name": "Bułka Kajzerka",
+    "name": "Bułka kajzerka",
     "categorySlug": "bakery",
     "imageUrl": "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 2
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 2,
+    "barcode": "5900820000124"
   },
   {
-    "name": "Bułka Tarta",
+    "name": "Bagietka francuska",
     "categorySlug": "bakery",
-    "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 180
+    "imageUrl": "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 2,
+    "barcode": "5900820000131"
   },
   {
-    "name": "Tortilla",
+    "name": "Rogalik maślany (Croissant)",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 2,
+    "barcode": "5900820000148"
+  },
+  {
+    "name": "Chleb tostowy",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 10,
+    "barcode": "5900820000155"
+  },
+  {
+    "name": "Chleb żytni na zakwasie",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 6,
+    "barcode": "5900820000162"
+  },
+  {
+    "name": "Tortille pszenne",
     "categorySlug": "bakery",
     "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 60
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 30,
+    "barcode": "5900820000179"
   },
   {
-    "name": "Jabłka",
-    "categorySlug": "veggies",
+    "name": "Bułki do burgerów",
+    "categorySlug": "bakery",
+    "imageUrl": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 7,
+    "barcode": "5900820000186"
+  },
+  {
+    "name": "Jabłka Jonagold",
+    "categorySlug": "fruits",
     "imageUrl": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=500&q=80",
     "defaultUnit": "kg",
-    "defaultShelfLifeDays": 14
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000193"
   },
   {
-    "name": "Pomidory",
-    "categorySlug": "veggies",
-    "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80",
+    "name": "Banany",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=500&q=80",
     "defaultUnit": "kg",
-    "defaultShelfLifeDays": 5
+    "defaultShelfLifeDays": 6,
+    "barcode": "5900820000209"
   },
   {
-    "name": "Ziemniaki",
-    "categorySlug": "veggies",
+    "name": "Pomarańcze deserowe",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1547514701-42782101795e?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000216"
+  },
+  {
+    "name": "Cytryny",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 21,
+    "barcode": "5900820000223"
+  },
+  {
+    "name": "Truskawki świeże",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 4,
+    "barcode": "5900820000230"
+  },
+  {
+    "name": "Borówki amerykańskie",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1498557850523-fd3d118b962e?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 7,
+    "barcode": "5900820000247"
+  },
+  {
+    "name": "Awokado Hass",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 5,
+    "barcode": "5900820000254"
+  },
+  {
+    "name": "Winogrona jasne bezpestkowe",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1537640538966-79f369143f8f?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 8,
+    "barcode": "5900820000261"
+  },
+  {
+    "name": "Arbuz cały",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 10,
+    "barcode": "5900820000278"
+  },
+  {
+    "name": "Kiwi",
+    "categorySlug": "fruits",
+    "imageUrl": "https://images.unsplash.com/photo-1585059895524-72359e06133a?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 10,
+    "barcode": "5900820000285"
+  },
+  {
+    "name": "Ziemniaki myte",
+    "categorySlug": "vegetables",
     "imageUrl": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=500&q=80",
     "defaultUnit": "kg",
-    "defaultShelfLifeDays": 30
+    "defaultShelfLifeDays": 30,
+    "barcode": "5900820000292"
   },
   {
-    "name": "Cebula",
-    "categorySlug": "veggies",
+    "name": "Pomidory malinowe",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 7,
+    "barcode": "5900820000308"
+  },
+  {
+    "name": "Ogórek zielony szklarniowy",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 7,
+    "barcode": "5900820000315"
+  },
+  {
+    "name": "Marchew wczesna",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 20,
+    "barcode": "5900820000322"
+  },
+  {
+    "name": "Cebula żółta",
+    "categorySlug": "vegetables",
     "imageUrl": "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 30
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 30,
+    "barcode": "5900820000339"
   },
   {
-    "name": "Czosnek",
-    "categorySlug": "veggies",
+    "name": "Czosnek główka",
+    "categorySlug": "vegetables",
     "imageUrl": "https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 60
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 45,
+    "barcode": "5900820000346"
   },
   {
-    "name": "Szpinak Świeży",
-    "categorySlug": "veggies",
-    "imageUrl": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 4
-  },
-  {
-    "name": "Pieczarki",
-    "categorySlug": "veggies",
-    "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 5
-  },
-  {
-    "name": "Papryka Czerwona",
-    "categorySlug": "veggies",
+    "name": "Papryka czerwona słodka",
+    "categorySlug": "vegetables",
     "imageUrl": "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "pcs",
-    "defaultShelfLifeDays": 7
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 10,
+    "barcode": "5900820000353"
   },
   {
-    "name": "Pierś z kurczaka",
+    "name": "Brokuł świeży",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 6,
+    "barcode": "5900820000360"
+  },
+  {
+    "name": "Szpinak baby w liściach",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 5,
+    "barcode": "5900820000377"
+  },
+  {
+    "name": "Pieczarki białe",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 6,
+    "barcode": "5900820000384"
+  },
+  {
+    "name": "Cukinia zielona",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1563252722-65a0b779b699?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 9,
+    "barcode": "5900820000391"
+  },
+  {
+    "name": "Filet z piersi kurczaka",
     "categorySlug": "meat",
     "imageUrl": "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=500&q=80",
     "defaultUnit": "kg",
-    "defaultShelfLifeDays": 3
+    "defaultShelfLifeDays": 4,
+    "barcode": "5900820000407"
   },
   {
-    "name": "Boczek wędzony",
+    "name": "Mielone mięso wołowe",
     "categorySlug": "meat",
-    "imageUrl": "https://images.unsplash.com/photo-1608797178974-15b35a61dd75?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 14
+    "imageUrl": "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 3,
+    "barcode": "5900820000414"
   },
   {
-    "name": "Mąka Pszenna",
+    "name": "Schab wieprzowy bez kości",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 4,
+    "barcode": "5900820000421"
+  },
+  {
+    "name": "Stek z antrykotu wołowego",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 5,
+    "barcode": "5900820000438"
+  },
+  {
+    "name": "Parówki z szynki 93%",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1628689414436-39f8f2b7042a?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000445"
+  },
+  {
+    "name": "Boczek wędzony w plastrach",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1606851094655-b2593a9af63f?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 18,
+    "barcode": "5900820000452"
+  },
+  {
+    "name": "Szynka konserwowa",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 12,
+    "barcode": "5900820000469"
+  },
+  {
+    "name": "Kiełbasa śląska",
+    "categorySlug": "meat",
+    "imageUrl": "https://images.unsplash.com/photo-1585325701165-351af916e581?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 10,
+    "barcode": "5900820000476"
+  },
+  {
+    "name": "Świeży filet z łososia atlantyckiego",
+    "categorySlug": "fish",
+    "imageUrl": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 3,
+    "barcode": "5900820000483"
+  },
+  {
+    "name": "Filet z dorsza bałtyckiego",
+    "categorySlug": "fish",
+    "imageUrl": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 3,
+    "barcode": "5900820000490"
+  },
+  {
+    "name": "Krewetki tygrysie",
+    "categorySlug": "fish",
+    "imageUrl": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 4,
+    "barcode": "5900820000506"
+  },
+  {
+    "name": "Tuńczyk w kawałkach w oliwie",
+    "categorySlug": "fish",
+    "imageUrl": "https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000513"
+  },
+  {
+    "name": "Ryż biały jaśminowy 1kg",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000520"
+  },
+  {
+    "name": "Makaron spaghetti 500g",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1551462147-ff29053bfc14?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000537"
+  },
+  {
+    "name": "Makaron penne z semoliny",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1621996346565-e3d5d6281724?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000544"
+  },
+  {
+    "name": "Mąka pszenna typ 500",
     "categorySlug": "pantry",
     "imageUrl": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80",
     "defaultUnit": "kg",
-    "defaultShelfLifeDays": 365
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000551"
   },
   {
-    "name": "Olej Rzepakowy",
+    "name": "Cukier biały kryształ",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1581441363689-1f3c3c414635?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 730,
+    "barcode": "5900820000568"
+  },
+  {
+    "name": "Sól morska drobnoziarnista",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1518110925495-5fe2fda0442c?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 1000,
+    "barcode": "5900820000575"
+  },
+  {
+    "name": "Oliwa z oliwek Extra Virgin",
     "categorySlug": "pantry",
     "imageUrl": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=500&q=80",
     "defaultUnit": "L",
-    "defaultShelfLifeDays": 180
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000582"
   },
   {
-    "name": "Makaron Spaghetti",
+    "name": "Olej rzepakowy uniwersalny",
     "categorySlug": "pantry",
-    "imageUrl": "https://images.unsplash.com/photo-1621996346565-e3d5d628169b?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 365
+    "imageUrl": "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "L",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000599"
   },
   {
-    "name": "Ryż Biały",
+    "name": "Kasz gryczana prażona 4x100g",
     "categorySlug": "pantry",
     "imageUrl": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "kg",
-    "defaultShelfLifeDays": 365
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 240,
+    "barcode": "5900820000605"
   },
   {
-    "name": "Przecier pomidorowy (Passata)",
-    "categorySlug": "pantry",
-    "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80",
-    "defaultUnit": "g",
-    "defaultShelfLifeDays": 365
-  },
-  {
-    "name": "Płatki owsiane",
+    "name": "Płatki owsiane górskie",
     "categorySlug": "pantry",
     "imageUrl": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000612"
+  },
+  {
+    "name": "Pomidory krojone w puszce",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 730,
+    "barcode": "5900820000629"
+  },
+  {
+    "name": "Ciecierzyca gotowana w słoiku",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000636"
+  },
+  {
+    "name": "Ketchup łagodny",
+    "categorySlug": "sauces",
+    "imageUrl": "https://images.unsplash.com/photo-1582293041079-7814c2f12063?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000643"
+  },
+  {
+    "name": "Majonez tradycyjny",
+    "categorySlug": "sauces",
+    "imageUrl": "https://images.unsplash.com/photo-1576186726580-a816e8b12896?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 90,
+    "barcode": "5900820000650"
+  },
+  {
+    "name": "Musztarda delikatesowa",
+    "categorySlug": "sauces",
+    "imageUrl": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000667"
+  },
+  {
+    "name": "Sos sojowy jasny",
+    "categorySlug": "sauces",
+    "imageUrl": "https://images.unsplash.com/photo-1584278860047-22db9ff82bed?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "ml",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000674"
+  },
+  {
+    "name": "Woda mineralna niegazowana 1.5L",
+    "categorySlug": "beverages",
+    "imageUrl": "https://images.unsplash.com/photo-1550505095-81378a674395?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "L",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000681"
+  },
+  {
+    "name": "Sok pomarańczowy 100%",
+    "categorySlug": "beverages",
+    "imageUrl": "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "L",
+    "defaultShelfLifeDays": 60,
+    "barcode": "5900820000698"
+  },
+  {
+    "name": "Kawa ziarnista Arabica 1kg",
+    "categorySlug": "beverages",
+    "imageUrl": "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "kg",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000704"
+  },
+  {
+    "name": "Herbata czarna Earl Grey 50 torebek",
+    "categorySlug": "beverages",
+    "imageUrl": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000711"
+  },
+  {
+    "name": "Herbata zielona liściasta",
+    "categorySlug": "beverages",
+    "imageUrl": "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000728"
+  },
+  {
+    "name": "Napój gazowany Cola 1L",
+    "categorySlug": "beverages",
+    "imageUrl": "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "L",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000735"
+  },
+  {
+    "name": "Piwo jasne pełne 500ml",
+    "categorySlug": "beverages",
+    "imageUrl": "https://images.unsplash.com/photo-1608270102604-0e5449557007?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000742"
+  },
+  {
+    "name": "Czekolada gorzka 70%",
+    "categorySlug": "snacks",
+    "imageUrl": "https://images.unsplash.com/photo-1548907040-4baa42d10919?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000759"
+  },
+  {
+    "name": "Chipsy ziemniaczane solone",
+    "categorySlug": "snacks",
+    "imageUrl": "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 90,
+    "barcode": "5900820000766"
+  },
+  {
+    "name": "Orzechy włoskie łuskane",
+    "categorySlug": "snacks",
+    "imageUrl": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=500&q=80",
     "defaultUnit": "g",
-    "defaultShelfLifeDays": 365
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000773"
+  },
+  {
+    "name": "Migdały prażone",
+    "categorySlug": "snacks",
+    "imageUrl": "https://images.unsplash.com/photo-1508061252224-b045420df170?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000780"
+  },
+  {
+    "name": "Miód pszczeli wielokwiatowy",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1587049352851-8d4e89133924?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 730,
+    "barcode": "5900820000797"
+  },
+  {
+    "name": "Dżem truskawkowy 100% z owoców",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1568651318399-52e46b026601?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000803"
+  },
+  {
+    "name": "Pizza mrożona Margherita",
+    "categorySlug": "frozen",
+    "imageUrl": "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000810"
+  },
+  {
+    "name": "Mieszanka warzywna mrożona",
+    "categorySlug": "frozen",
+    "imageUrl": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000827"
+  },
+  {
+    "name": "Lody waniliowe rzemieślnicze",
+    "categorySlug": "frozen",
+    "imageUrl": "https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000834"
+  },
+  {
+    "name": "Frytki do piekarnika karbowane",
+    "categorySlug": "frozen",
+    "imageUrl": "https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000841"
+  },
+  {
+    "name": "Pierogi ruskie głęboko mrożone",
+    "categorySlug": "frozen",
+    "imageUrl": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000858"
+  },
+  {
+    "name": "Czarny pieprz ziarnisty",
+    "categorySlug": "spices",
+    "imageUrl": "https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "g",
+    "defaultShelfLifeDays": 730,
+    "barcode": "5900820000865"
+  },
+  {
+    "name": "Oregano suszone",
+    "categorySlug": "spices",
+    "imageUrl": "https://images.unsplash.com/photo-1599940824399-b87987ceb72a?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000872"
+  },
+  {
+    "name": "Papryka wędzona słodka",
+    "categorySlug": "spices",
+    "imageUrl": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000889"
+  },
+  {
+    "name": "Bazylia świeża w doniczce",
+    "categorySlug": "vegetables",
+    "imageUrl": "https://images.unsplash.com/photo-1618164435735-413d3b066c9a?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 10,
+    "barcode": "5900820000896"
+  },
+  {
+    "name": "Hummus klasyczny",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 14,
+    "barcode": "5900820000902"
+  },
+  {
+    "name": "Mleko owsiane Barista",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "L",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000919"
+  },
+  {
+    "name": "Tofu naturalne",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 30,
+    "barcode": "5900820000926"
+  },
+  {
+    "name": "Ocet balsamiczny z Modeny",
+    "categorySlug": "sauces",
+    "imageUrl": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "ml",
+    "defaultShelfLifeDays": 730,
+    "barcode": "5900820000933"
+  },
+  {
+    "name": "Pesto alla Genovese",
+    "categorySlug": "sauces",
+    "imageUrl": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000940"
+  },
+  {
+    "name": "Oliwki czarne drylowane",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820000957"
+  },
+  {
+    "name": "Kukurydza słodka konserwowa",
+    "categorySlug": "pantry",
+    "imageUrl": "https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 730,
+    "barcode": "5900820000964"
+  },
+  {
+    "name": "Serek wiejski ziarnisty",
+    "categorySlug": "dairy",
+    "imageUrl": "https://images.unsplash.com/photo-1559561853-08451507cbe7?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "szt",
+    "defaultShelfLifeDays": 12,
+    "barcode": "5900820000971"
+  },
+  {
+    "name": "Chrupki kukurydziane bez soli",
+    "categorySlug": "snacks",
+    "imageUrl": "https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 120,
+    "barcode": "5900820000988"
+  },
+  {
+    "name": "Krakersy solone",
+    "categorySlug": "snacks",
+    "imageUrl": "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 180,
+    "barcode": "5900820000995"
+  },
+  {
+    "name": "Cynamon mielony cejloński",
+    "categorySlug": "spices",
+    "imageUrl": "https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&w=500&q=80",
+    "defaultUnit": "op",
+    "defaultShelfLifeDays": 365,
+    "barcode": "5900820001008"
   }
 ]
-
-

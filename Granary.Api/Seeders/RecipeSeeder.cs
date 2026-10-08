@@ -18,7 +18,7 @@ namespace Granary.Api.Seeders
 
         public async Task SeedAsync()
         {
-            if (await _context.Recipes.AnyAsync())
+            if (await _context.Recipes.AnyAsync(r => r.CreatedByUserId == null))
             {
                 return;
             }
@@ -40,65 +40,101 @@ namespace Granary.Api.Seeders
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var seedModels = JsonSerializer.Deserialize<List<RecipeJsonModel>>(jsonContent, options);
 
-            if (seedModels == null || !seedModels.Any())
-            {
-                return;
-            }
+            if (seedModels == null || !seedModels.Any()) return;
 
-            var productsMap = await _context.Products
-                .ToDictionaryAsync(p => p.Name.ToLower().Trim(), p => p.Id);
+            var existingProducts = await _context.Products.ToListAsync();
+            var defaultCategory = await _context.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == "inne")
+                                  ?? await _context.Categories.FirstOrDefaultAsync();
 
-            var recipesToAdd = new List<Recipe>();
+            var defaultCategoryId = defaultCategory?.Id ?? Guid.NewGuid();
+
+            var existingRecipes = await _context.Recipes
+                .AsNoTracking()
+                .ToListAsync();
+
+            var existingRecipeMap = existingRecipes
+                .ToDictionary(r => r.Title.Trim().ToLower(), r => r.Id);
+
+            var recipesWithIngredients = await _context.RecipeIngredients
+                .AsNoTracking()
+                .Select(ri => ri.RecipeId)
+                .Distinct()
+                .ToHashSetAsync();
 
             foreach (var rModel in seedModels)
             {
-                var recipe = new Recipe
+                var normalizedTitle = rModel.Title.Trim().ToLower();
+                Guid recipeId;
+
+                if (!existingRecipeMap.TryGetValue(normalizedTitle, out recipeId))
                 {
-                    Id = Guid.NewGuid(),
-                    Title = rModel.Title,
-                    Description = rModel.Description,
-                    Instructions = rModel.Instructions,
-                    PrepTimeMinutes = rModel.PrepTimeMinutes,
-                    Servings = rModel.Servings > 0 ? rModel.Servings : 1,
-                    ImageUrl = rModel.ImageUrl,
-                    CreatedAt = DateTime.UtcNow
-                };
+                    recipeId = Guid.NewGuid();
+                    var newRecipe = new Recipe
+                    {
+                        Id = recipeId,
+                        Title = rModel.Title.Trim(),
+                        Description = rModel.Description,
+                        Instructions = rModel.Instructions,
+                        PrepTimeMinutes = rModel.PrepTimeMinutes > 0 ? rModel.PrepTimeMinutes : 15,
+                        Servings = rModel.Servings > 0 ? rModel.Servings : 2,
+                        ImageUrl = rModel.ImageUrl,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedByUserId = null 
+                    };
+
+                    _context.Recipes.Add(newRecipe);
+                    existingRecipeMap[normalizedTitle] = recipeId;
+                }
+
+                if (recipesWithIngredients.Contains(recipeId))
+                {
+                    continue;
+                }
 
                 foreach (var ingModel in rModel.Ingredients)
                 {
-                    var normalizedName = ingModel.ProductName.ToLower().Trim();
+                    var normalizedIngName = ingModel.ProductName.Trim().ToLower();
+                    var product = existingProducts.FirstOrDefault(p => p.Name.Trim().ToLower() == normalizedIngName);
 
-                    if (productsMap.TryGetValue(normalizedName, out var productId))
+                    if (product == null)
                     {
-                        recipe.Ingredients.Add(new RecipeIngredient
+                        product = existingProducts.FirstOrDefault(p =>
+                            p.Name.ToLower().Contains(normalizedIngName) ||
+                            normalizedIngName.Contains(p.Name.ToLower()));
+                    }
+
+                    if (product == null)
+                    {
+                        product = new Product
                         {
                             Id = Guid.NewGuid(),
-                            RecipeId = recipe.Id,
-                            ProductId = productId,
-                            Quantity = ingModel.Quantity,
-                            Unit = ingModel.Unit,
-                            IsOptional = ingModel.IsOptional
-                        });
+                            Name = ingModel.ProductName.Trim(),
+                            CategoryId = defaultCategoryId,
+                            DefaultUnit = !string.IsNullOrWhiteSpace(ingModel.Unit) ? ingModel.Unit : "szt.",
+                            CreatedByUserId = null,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Products.Add(product);
+                        existingProducts.Add(product);
                     }
-                    else
+
+                    _context.RecipeIngredients.Add(new RecipeIngredient
                     {
-                        _logger.LogWarning("Składnik '{ProductName}' z przepisu '{RecipeTitle}' nie istnieje w tabeli Products!",
-                            ingModel.ProductName, rModel.Title);
-                    }
+                        Id = Guid.NewGuid(),
+                        RecipeId = recipeId,
+                        ProductId = product.Id,
+                        Quantity = ingModel.Quantity > 0 ? ingModel.Quantity : 1,
+                        Unit = !string.IsNullOrWhiteSpace(ingModel.Unit) ? ingModel.Unit : "szt.",
+                        IsOptional = ingModel.IsOptional
+                    });
                 }
 
-                if (recipe.Ingredients.Any())
-                {
-                    recipesToAdd.Add(recipe);
-                }
+                recipesWithIngredients.Add(recipeId);
             }
 
-            if (recipesToAdd.Any())
-            {
-                await _context.Recipes.AddRangeAsync(recipesToAdd);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Pomyślnie zaseedowano {Count} przepisów z pliku JSON!", recipesToAdd.Count);
-            }
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Pomyślnie załadowano przepisy globalne z pliku recipes.json.");
         }
 
         private class RecipeJsonModel
@@ -121,5 +157,3 @@ namespace Granary.Api.Seeders
         }
     }
 }
-
-

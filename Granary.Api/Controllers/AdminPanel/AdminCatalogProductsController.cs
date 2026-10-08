@@ -22,12 +22,10 @@ namespace Granary.Api.Controllers.AdminPanel
         /// Pobiera/Przeszukuje całą bazę produktów dla panelu administratora.
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<CatalogProductDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetAll([FromQuery] string? query, [FromQuery] Guid? categoryId)
+        public async Task<IActionResult> GetAll([FromQuery] string? query, [FromQuery] Guid? categoryId, [FromQuery] bool excludePantry = false) 
         {
-            var result = await _catalogService.SearchAsync(query, categoryId, currentUserId: null);
+            var userId = GetCurrentUserId();
+            var result = await _catalogService.SearchAsync(query, categoryId, userId, excludePantry);
             return HandleServiceResult(result);
         }
 
