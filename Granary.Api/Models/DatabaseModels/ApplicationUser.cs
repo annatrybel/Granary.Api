@@ -5,6 +5,7 @@ namespace Granary.Api.Models.DatabaseModels
     public class ApplicationUser : IdentityUser<Guid>
     {
         public string? AvatarUrl { get; set; }
+        public bool DarkMode { get; set; } = false;
 
         public ICollection<PantryItem> PantryItems { get; set; } = new List<PantryItem>();
         public ICollection<Recipe> CreatedRecipes { get; set; } = new List<Recipe>();
