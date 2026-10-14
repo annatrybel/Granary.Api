@@ -18,5 +18,6 @@ namespace Granary.Api.Models.DatabaseModels
         public int DisplayOrder { get; set; } = 0;
 
         public ICollection<Product> Products { get; set; } = new List<Product>();
+        public ICollection<CategoryTranslation> Translations { get; set; } = new List<CategoryTranslation>();
     }
 }

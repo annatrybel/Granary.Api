@@ -35,5 +35,6 @@ namespace Granary.Api.Models.DatabaseModels
 
         public ICollection<RecipeIngredient> Ingredients { get; set; } = new List<RecipeIngredient>();
         public ICollection<MealPlanRecipe> MealPlanRecipes { get; set; } = new List<MealPlanRecipe>();
+        public ICollection<RecipeTranslation> Translations { get; set; } = new List<RecipeTranslation>();
     }
 }
