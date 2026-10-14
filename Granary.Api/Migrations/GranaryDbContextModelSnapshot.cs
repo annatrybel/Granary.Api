@@ -48,6 +48,10 @@ namespace Granary.Api.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
 
@@ -114,6 +118,71 @@ namespace Granary.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.CategoryTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageId");
+
+                    b.HasIndex("CategoryId", "LanguageId")
+                        .IsUnique();
+
+                    b.ToTable("CategoryTranslations");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Language", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FlagEmoji")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Languages");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlan", b =>
@@ -265,6 +334,39 @@ namespace Granary.Api.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.ProductTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageId");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("ProductId", "LanguageId")
+                        .IsUnique();
+
+                    b.ToTable("ProductTranslations");
+                });
+
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Recipe", b =>
                 {
                     b.Property<Guid>("Id")
@@ -342,6 +444,41 @@ namespace Granary.Api.Migrations
                     b.ToTable("RecipeIngredients");
                 });
 
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.RecipeTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RecipeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageId");
+
+                    b.HasIndex("RecipeId", "LanguageId")
+                        .IsUnique();
+
+                    b.ToTable("RecipeTranslations");
+                });
+
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.ShoppingList", b =>
                 {
                     b.Property<Guid>("Id")
@@ -403,6 +540,34 @@ namespace Granary.Api.Migrations
                     b.HasIndex("ShoppingListId");
 
                     b.ToTable("ShoppingListItems");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.UiTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageId");
+
+                    b.HasIndex("Key", "LanguageId")
+                        .IsUnique();
+
+                    b.ToTable("UiTranslations");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.UserRecipeInteraction", b =>
@@ -605,6 +770,25 @@ namespace Granary.Api.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.CategoryTranslation", b =>
+                {
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Category", "Category")
+                        .WithMany("Translations")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Language");
+                });
+
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlan", b =>
                 {
                     b.HasOne("Granary.Api.Models.DatabaseModels.ApplicationUser", "User")
@@ -671,6 +855,25 @@ namespace Granary.Api.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.ProductTranslation", b =>
+                {
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Product", "Product")
+                        .WithMany("Translations")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Recipe", b =>
                 {
                     b.HasOne("Granary.Api.Models.DatabaseModels.ApplicationUser", "CreatedByUser")
@@ -695,6 +898,25 @@ namespace Granary.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+
+                    b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.RecipeTranslation", b =>
+                {
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Recipe", "Recipe")
+                        .WithMany("Translations")
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
 
                     b.Navigation("Recipe");
                 });
@@ -725,6 +947,17 @@ namespace Granary.Api.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("ShoppingList");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.UiTranslation", b =>
+                {
+                    b.HasOne("Granary.Api.Models.DatabaseModels.Language", "Language")
+                        .WithMany("Translations")
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.UserRecipeInteraction", b =>
@@ -809,6 +1042,13 @@ namespace Granary.Api.Migrations
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Category", b =>
                 {
                     b.Navigation("Products");
+
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Language", b =>
+                {
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlan", b =>
@@ -821,6 +1061,8 @@ namespace Granary.Api.Migrations
                     b.Navigation("PantryItems");
 
                     b.Navigation("RecipeIngredients");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Recipe", b =>
@@ -828,6 +1070,8 @@ namespace Granary.Api.Migrations
                     b.Navigation("Ingredients");
 
                     b.Navigation("MealPlanRecipes");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.ShoppingList", b =>
