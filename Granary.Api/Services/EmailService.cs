@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+﻿using System.Net;
 using Granary.Api.Models.Dto.Contact;
 using Granary.Api.Services.Errors;
 using Granary.Api.Services.Interfaces;
@@ -13,75 +13,96 @@ namespace Granary.Api.Services
         private readonly ILogger<EmailService> _logger;
         private readonly IConfiguration _configuration;
 
-        public EmailService(IEmailSender emailSender, ILogger<EmailService> logger, IConfiguration configuration)
+        public EmailService(
+            IEmailSender emailSender,
+            ILogger<EmailService> logger,
+            IConfiguration configuration)
         {
             _emailSender = emailSender;
             _logger = logger;
             _configuration = configuration;
         }
 
-        #region Formularz Kontaktowy
+        #region Formularz Kontaktowy (Wiadomość do Administratora)
 
         public async Task<ServiceResult> SendContactMessageToAdminAsync(ContactMessageDto message)
         {
             try
             {
-                string subject = "Zapytanie z aplikacji Smart Pantry";
+                if (string.IsNullOrWhiteSpace(message.Email) || string.IsNullOrWhiteSpace(message.Message))
+                {
+                    return ServiceResult.Failure("Adres e-mail oraz treść wiadomości są wymagane.");
+                }
 
-                string adminEmail = _configuration["EmailConfiguration:From"];
+                string adminEmail = _configuration["EmailConfiguration:AdminEmail"]
+                                 ?? _configuration["EmailConfiguration:SupportEmail"]
+                                 ?? _configuration["EmailConfiguration:From"]
+                                 ?? string.Empty;
+
                 if (string.IsNullOrEmpty(adminEmail))
                 {
-                    _logger.LogError("Adres email administratora (EmailConfiguration:From) nie jest ustawiony w konfiguracji.");
+                    _logger.LogError("Adres email administratora (AdminEmail/From) nie został skonfigurowany w appsettings.json.");
                     return ServiceResult.Failure(EmailError.ConfigurationError());
                 }
 
-                string emailSubject = $"[Smart Pantry] Nowa wiadomość: {subject}";
+                string safeName = WebUtility.HtmlEncode(message.Name?.Trim() ?? "Użytkownik");
+                string safeEmail = WebUtility.HtmlEncode(message.Email.Trim());
+                string safeSubject = WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(message.Subject) ? "Zapytanie z Centrum Pomocy" : message.Subject.Trim());
+                string safeMessage = WebUtility.HtmlEncode(message.Message.Trim()).Replace("\n", "<br/>");
+
+                string emailSubject = $"[Smart Pantry Wsparcie] {safeSubject}";
                 string emailBody = $@"
-                    <h2>Nowa wiadomość z formularza kontaktowego Smart Pantry</h2>
-                    <p><strong>Od:</strong> {message.Name} ({message.Email})</p>
-                    <p><strong>Temat:</strong> {subject}</p>
-                    <p><strong>Wiadomość:</strong></p>
-                    <blockquote style='background-color: #F6F3F2; padding: 12px; border-left: 4px solid #536500;'>
-                        {message.Message}
-                    </blockquote>
-                    <hr>
-                    <p>Wiadomość wygenerowana automatycznie przez system Smart Pantry.</p>
+                    <div style='font-family: Arial, sans-serif; color: #1B1C18; line-height: 1.6; max-width: 600px;'>
+                        <h2 style='color: #536500; border-bottom: 2px solid #536500; padding-bottom: 8px;'>Nowa wiadomość z Centrum Pomocy</h2>
+                        <p><strong>Użytkownik:</strong> {safeName}</p>
+                        <p><strong>Adres zwrotny:</strong> <a href='mailto:{safeEmail}' style='color: #536500;'>{safeEmail}</a></p>
+                        <p><strong>Wybrany temat:</strong> {safeSubject}</p>
+                        <p><strong>Treść zgłoszenia:</strong></p>
+                        <div style='background-color: #F6F3F2; padding: 16px; border-left: 4px solid #536500; border-radius: 6px; margin: 12px 0;'>
+                            {safeMessage}
+                        </div>
+                        <hr style='border: none; border-top: 1px solid #E1E3D5; margin: 20px 0;'>
+                        <p style='font-size: 11px; color: #757962;'>Wiadomość wysłana z poziomu profilu użytkownika w aplikacji Smart Pantry.</p>
+                    </div>
                 ";
 
                 await _emailSender.SendEmailAsync(adminEmail, emailSubject, emailBody);
-                await SendContactConfirmationToUserAsync(message, subject);
+                _logger.LogInformation("Przesłano wiadomość kontaktową od {UserEmail} do administratora ({AdminEmail}).", message.Email, adminEmail);
+
+                await SendContactConfirmationToUserAsync(message, safeSubject, safeMessage);
 
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Błąd podczas wysyłania wiadomości kontaktowej.");
+                _logger.LogError(ex, "Wystąpił błąd podczas wysyłania wiadomości kontaktowej.");
                 return ServiceResult.Failure(EmailError.SendFailed());
             }
         }
 
-        private async Task SendContactConfirmationToUserAsync(ContactMessageDto message, string subject)
+        private async Task SendContactConfirmationToUserAsync(ContactMessageDto message, string safeSubject, string safeMessageHtml)
         {
             try
             {
-                string confirmationSubject = "Potwierdzenie otrzymania wiadomości - Smart Pantry";
+                string confirmationSubject = "Potwierdzenie otrzymania wiadomości – Smart Pantry";
                 string confirmationBody = $@"
-                    <h2>Dziękujemy za kontakt!</h2>
-                    <p>Otrzymaliśmy Twoją wiadomość i nasz zespół odpowie na nią jak najszybciej.</p>
-                    <p><strong>Treść Twojej wiadomości:</strong></p>
-                    <blockquote style='background-color: #F6F3F2; padding: 12px; border-left: 4px solid #536500;'>
-                        {message.Message}
-                    </blockquote>
-                    <hr>
-                    <p>Z wyrazami szacunku,<br><strong>Zespół Smart Pantry</strong></p>
+                    <div style='font-family: Arial, sans-serif; color: #1B1C18; line-height: 1.6; max-width: 600px;'>
+                        <h2 style='color: #536500;'>Dziękujemy za kontakt!</h2>
+                        <p>Witaj <strong>{WebUtility.HtmlEncode(message.Name ?? "Użytkowniku")}</strong>,</p>
+                        <p>Otrzymaliśmy Twoją wiadomość w sprawie: <em>{safeSubject}</em>. Nasz zespół odpowie na nią bezpośrednio na ten adres e-mail.</p>
+                        <div style='background-color: #F6F3F2; padding: 14px; border-left: 4px solid #536500; border-radius: 4px; margin: 16px 0; font-size: 13px;'>
+                            {safeMessageHtml}
+                        </div>
+                        <hr style='border: none; border-top: 1px solid #E1E3D5; margin: 20px 0;'>
+                        <p style='color: #536500; font-weight: bold;'>Zespół Smart Pantry</p>
+                    </div>
                 ";
 
                 await _emailSender.SendEmailAsync(message.Email, confirmationSubject, confirmationBody);
-                _logger.LogInformation("Potwierdzenie wysłania wiadomości zostało wysłane do {UserEmail}.", message.Email);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Nie udało się wysłać emaila z potwierdzeniem do {UserEmail}.", message.Email);
+                _logger.LogWarning(ex, "Nie udało się wysłać automatycznego potwierdzenia do użytkownika {UserEmail}.", message.Email);
             }
         }
 
@@ -89,11 +110,16 @@ namespace Granary.Api.Services
 
         #region Zaproszenia do Wspólnej Spiżarni
 
-        public async Task<ServiceResult> SendSharedPantryInvitationAsync(string senderName, string recipientEmail, string pantryName, string invitationUrl, bool userExists)
+        public async Task<ServiceResult> SendSharedPantryInvitationAsync(
+            string senderName,
+            string recipientEmail,
+            string pantryName,
+            string invitationUrl,
+            bool userExists)
         {
             try
             {
-                string subject = $"{senderName} zaprasza Cię do wspólnej spiżarni '{pantryName}' w Smart Pantry!";
+                string subject = $"{senderName} zaprasza Cię do wspólnej spiżarni '{pantryName}'!";
                 string templateFileName = userExists
                     ? "SharedPantryInvitationExistingUser.html"
                     : "SharedPantryInvitationNewUser.html";
@@ -102,105 +128,95 @@ namespace Granary.Api.Services
 
                 if (emailBody == null)
                 {
-                    return ServiceResult.Failure("Nie udało się utworzyć treści e-maila z zaproszeniem z powodu błędu szablonu.");
+                    return ServiceResult.Failure("Błąd szablonu zaproszenia.");
                 }
 
                 await _emailSender.SendEmailAsync(recipientEmail, subject, emailBody);
-
-                _logger.LogInformation("Zaproszenie do spiżarni '{PantryName}' zostało wysłane do {RecipientEmail}", pantryName, recipientEmail);
+                _logger.LogInformation("Zaproszenie do spiżarni '{PantryName}' wysłane do {RecipientEmail}", pantryName, recipientEmail);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Błąd podczas wysyłania zaproszenia do spiżarni dla {RecipientEmail}", recipientEmail);
-                return ServiceResult.Failure("Wystąpił nieoczekiwany błąd podczas wysyłania zaproszenia.");
+                _logger.LogError(ex, "Błąd podczas wysyłania zaproszenia do {RecipientEmail}", recipientEmail);
+                return ServiceResult.Failure("Wystąpił błąd podczas wysyłania zaproszenia.");
             }
         }
 
         private async Task<string?> CreateInvitationBodyAsync(string? senderName, string pantryName, string invitationUrl, string templateFileName)
         {
-            string templateDirectory = Path.Combine(AppContext.BaseDirectory, "Templates");
-            string templatePath = Path.Combine(templateDirectory, templateFileName);
-
-            string emailTemplateContent;
-            try
-            {
-                emailTemplateContent = await File.ReadAllTextAsync(templatePath);
-            }
-            catch (DirectoryNotFoundException)
-            {
-                _logger.LogError("Nie znaleziono folderu szablonów email: {TemplateDirectory}", templateDirectory);
-                return null;
-            }
-            catch (FileNotFoundException)
+            string templatePath = ResolveTemplatePath(templateFileName);
+            if (!File.Exists(templatePath))
             {
                 _logger.LogError("Nie znaleziono pliku szablonu email: {TemplatePath}", templatePath);
                 return null;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Błąd podczas odczytu szablonu email z pliku: {TemplatePath}", templatePath);
-                return null;
-            }
 
-            emailTemplateContent = emailTemplateContent.Replace("{InviterName}", senderName ?? "Współdomownik");
-            emailTemplateContent = emailTemplateContent.Replace("{PantryName}", pantryName);
-            emailTemplateContent = emailTemplateContent.Replace("{InvitationUrl}", invitationUrl);
+            string content = await File.ReadAllTextAsync(templatePath);
+            content = content.Replace("{InviterName}", WebUtility.HtmlEncode(senderName ?? "Współdomownik"));
+            content = content.Replace("{PantryName}", WebUtility.HtmlEncode(pantryName));
+            content = content.Replace("{InvitationUrl}", invitationUrl);
 
-            return emailTemplateContent;
+            return content;
         }
 
         #endregion
 
         #region Powiadomienia o Wygasających Produktach (Zero-Waste Alert)
 
-        public async Task<ServiceResult> SendExpiringProductsAlertAsync(string recipientEmail, string pantryName, int expiringCount, string productsListHtml)
+        public async Task<ServiceResult> SendExpiringProductsAlertAsync(
+            string recipientEmail,
+            string pantryName,
+            int expiringCount,
+            string productsListHtml)
         {
             try
             {
-                string subject = $"🚨 Smart Pantry: {expiringCount} zbliża się do końca ważności w '{pantryName}'";
+                string subject = $"🚨 Smart Pantry: {expiringCount} produktów kończy ważność w '{pantryName}'";
                 string templateFileName = "ExpiringProductsAlert.html";
 
                 string? emailBody = await CreateExpiringProductsBodyAsync(pantryName, expiringCount, productsListHtml, templateFileName);
 
                 if (emailBody == null)
                 {
-                    return ServiceResult.Failure("Nie udało się utworzyć treści e-maila z alertem ważności.");
+                    return ServiceResult.Failure("Nie udało się utworzyć treści alertu.");
                 }
 
                 await _emailSender.SendEmailAsync(recipientEmail, subject, emailBody);
-                _logger.LogInformation("Wysłano alert o wygasających produktach ({Count} szt.) do {RecipientEmail}", expiringCount, recipientEmail);
+                _logger.LogInformation("Wysłano alert o wygasających produktach ({Count}) do {RecipientEmail}", expiringCount, recipientEmail);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Błąd podczas wysyłania alertu o wygasających produktach do {RecipientEmail}", recipientEmail);
+                _logger.LogError(ex, "Błąd wysyłania alertu wygasania do {RecipientEmail}", recipientEmail);
                 return ServiceResult.Failure(EmailError.SendFailed());
             }
         }
 
         private async Task<string?> CreateExpiringProductsBodyAsync(string pantryName, int expiringCount, string productsListHtml, string templateFileName)
         {
-            string templateDirectory = Path.Combine(AppContext.BaseDirectory, "Templates");
-            string templatePath = Path.Combine(templateDirectory, templateFileName);
-
-            try
+            string templatePath = ResolveTemplatePath(templateFileName);
+            if (!File.Exists(templatePath))
             {
-                string emailBody = await File.ReadAllTextAsync(templatePath);
-
-                emailBody = emailBody.Replace("{PantryName}", pantryName);
-                emailBody = emailBody.Replace("{ExpiringCount}", expiringCount.ToString());
-                emailBody = emailBody.Replace("{ProductsListHtml}", productsListHtml);
-
-                return emailBody;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Nie udało się odczytać szablonu alertu wygasania: {TemplatePath}", templatePath);
+                _logger.LogError("Nie znaleziono szablonu alertu wygasania: {TemplatePath}", templatePath);
                 return null;
             }
+
+            string emailBody = await File.ReadAllTextAsync(templatePath);
+            emailBody = emailBody.Replace("{PantryName}", WebUtility.HtmlEncode(pantryName));
+            emailBody = emailBody.Replace("{ExpiringCount}", expiringCount.ToString());
+            emailBody = emailBody.Replace("{ProductsListHtml}", productsListHtml);
+
+            return emailBody;
         }
 
         #endregion
+
+        private static string ResolveTemplatePath(string templateFileName)
+        {
+            string primaryPath = Path.Combine(AppContext.BaseDirectory, "Templates", templateFileName);
+            if (File.Exists(primaryPath)) return primaryPath;
+
+            return Path.Combine(Directory.GetCurrentDirectory(), "Templates", templateFileName);
+        }
     }
 }

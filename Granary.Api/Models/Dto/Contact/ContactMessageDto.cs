@@ -4,16 +4,18 @@ namespace Granary.Api.Models.Dto.Contact
 {
     public class ContactMessageDto
     {
-        [Required(ErrorMessage = "Imię i nazwisko są wymagane.")]
-        [StringLength(100, ErrorMessage = "Imię nie może przekraczać 100 znaków.")]
-        public string Name { get; set; } = string.Empty;
+        [MaxLength(100)]
+        public string? Name { get; set; }
 
         [Required(ErrorMessage = "Adres e-mail jest wymagany.")]
-        [EmailAddress(ErrorMessage = "Podaj poprawny adres e-mail.")]
+        [EmailAddress(ErrorMessage = "Nieprawidłowy format adresu e-mail.")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Treść wiadomości jest wymagana.")]
-        [StringLength(2000, ErrorMessage = "Wiadomość nie może przekraczać 2000 znaków.")]
+        [MaxLength(150)]
+        public string? Subject { get; set; }
+
+        [Required(ErrorMessage = "Treść wiadomości nie może być pusta.")]
+        [MaxLength(3000, ErrorMessage = "Wiadomość jest zbyt długa (maks. 3000 znaków).")]
         public string Message { get; set; } = string.Empty;
     }
 }

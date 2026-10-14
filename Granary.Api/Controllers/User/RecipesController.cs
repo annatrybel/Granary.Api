@@ -1,5 +1,6 @@
 ﻿using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Recipes;
+using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,10 +39,10 @@ namespace Granary.Api.Controllers.Mobile
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(RecipeDetailDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(Guid id, [FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
-            var result = await _recipeService.GetByIdAsync(id, userId);
+            var result = await _recipeService.GetByIdAsync(id, userId, lang);
             return HandleServiceResult(result);
         }
 
@@ -98,6 +99,23 @@ namespace Granary.Api.Controllers.Mobile
             var userId = GetCurrentUserId();
             var result = await _recipeService.UpdateCustomRecipeAsync(id, dto, userId);
             return HandleServiceResult(result);
+        }
+
+
+
+        public record GenerateRecipeImageRequest(string Title);
+
+
+        [Authorize]
+        [HttpPost("generate-image")]
+        public async Task<IActionResult> GenerateRecipeImage(
+            [FromBody] GenerateRecipeImageRequest request,
+            [FromServices] IAiImageService imageService)
+        {
+            var (isValid, imageUrl, errorMessage) = await imageService.GenerateRecipeImageAsync(request.Title);
+
+            if (!isValid) return BadRequest(new { success = false, message = errorMessage });
+            return Ok(new { success = true, imageUrl });
         }
     }
 }

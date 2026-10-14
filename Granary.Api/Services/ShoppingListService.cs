@@ -23,8 +23,10 @@ namespace Granary.Api.Services.Shopping
 
         #region Zarządzanie Listami
 
-        public async Task<ServiceResult<IEnumerable<ShoppingListSummaryDto>>> GetUserListsAsync(Guid userId)
+        public async Task<ServiceResult<IEnumerable<ShoppingListSummaryDto>>> GetUserListsAsync(Guid userId, string lang = "pl")
         {
+            var isEnglish = lang.Trim().ToLower().StartsWith("en");
+
             var lists = await _dbContext.ShoppingLists
                 .AsNoTracking()
                 .Include(sl => sl.Items)
@@ -34,7 +36,7 @@ namespace Granary.Api.Services.Shopping
                 .Select(sl => new ShoppingListSummaryDto
                 {
                     Id = sl.Id,
-                    Name = sl.Name,
+                    Name = sl.IsMain ? (isEnglish ? "Main List" : "Główna lista") : sl.Name,
                     IsMain = sl.IsMain,
                     TotalItemsCount = sl.Items.Count
                 })
@@ -54,18 +56,32 @@ namespace Granary.Api.Services.Shopping
                 _dbContext.ShoppingLists.Add(mainList);
                 await _dbContext.SaveChangesAsync();
 
-                return await GetUserListsAsync(userId);
+                return await GetUserListsAsync(userId, lang);
             }
 
             return ServiceResult<IEnumerable<ShoppingListSummaryDto>>.Success(lists);
         }
 
-        public async Task<ServiceResult<ShoppingListDetailDto>> GetListDetailsAsync(Guid userId, Guid listId)
+        public async Task<ServiceResult<ShoppingListDetailDto>> GetListDetailsAsync(Guid userId, Guid listId, string lang = "pl")
         {
+            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+
+            var targetLang = await _dbContext.Languages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
+            var targetLangId = targetLang?.Id ?? Guid.Empty;
+
+            var isEnglish = normalizedLang.StartsWith("en");
+
             var list = await _dbContext.ShoppingLists
                 .AsNoTracking()
                 .Include(sl => sl.Items)
                     .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p.Translations)
+                .Include(sl => sl.Items)
+                    .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p.Category)
+                            .ThenInclude(c => c.Translations)
                 .FirstOrDefaultAsync(sl => sl.Id == listId && sl.UserId == userId);
 
             if (list == null)
@@ -76,19 +92,28 @@ namespace Granary.Api.Services.Shopping
             var dto = new ShoppingListDetailDto
             {
                 Id = list.Id,
-                Name = list.Name,
+                Name = list.IsMain ? (isEnglish ? "Main List" : "Główna lista") : list.Name,
                 IsMain = list.IsMain,
                 TotalItemsCount = list.Items.Count,
                 Items = list.Items
                     .OrderByDescending(i => i.CreatedAt)
-                    .Select(i => new ShoppingItemDto
+                    .Select(i =>
                     {
-                        Id = i.Id,
-                        ProductId = i.ProductId,
-                        Name = i.Name,
-                        Quantity = i.Quantity,
-                        Unit = i.Unit,
-                        CreatedAt = i.CreatedAt
+                        var transName = i.Product?.Translations
+                            .FirstOrDefault(t => t.LanguageId == targetLangId)?.Name;
+
+                        var transUnit = i.Product?.Translations
+                            .FirstOrDefault(t => t.LanguageId == targetLangId && t.Unit != null)?.Unit;
+
+                        return new ShoppingItemDto
+                        {
+                            Id = i.Id,
+                            ProductId = i.ProductId,
+                            Name = transName ?? i.Product?.Name ?? i.Name,
+                            Quantity = i.Quantity,
+                            Unit = transUnit ?? i.Unit,
+                            CreatedAt = i.CreatedAt
+                        };
                     })
                     .ToList()
             };
@@ -139,18 +164,28 @@ namespace Granary.Api.Services.Shopping
 
         #region Zarządzanie Pozycjami na Liście
 
-        public async Task<ServiceResult<ShoppingItemDto>> AddItemAsync(Guid userId, Guid listId, AddShoppingItemDto dto)
+        public async Task<ServiceResult<ShoppingItemDto>> AddItemAsync(Guid userId, Guid listId, AddShoppingItemDto dto, string lang = "pl")
         {
             var list = await _dbContext.ShoppingLists.FirstOrDefaultAsync(sl => sl.Id == listId && sl.UserId == userId);
             if (list == null) return ServiceResult<ShoppingItemDto>.Failure("Nie znaleziono listy.");
 
+            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+            var targetLang = await _dbContext.Languages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
+            var targetLangId = targetLang?.Id ?? Guid.Empty;
+
             string itemName;
             string? emoji = "🛒";
             Guid? productId = dto.ProductId;
+            Product? prod = null;
 
             if (productId.HasValue)
             {
-                var prod = await _dbContext.Products.FindAsync(productId.Value);
+                prod = await _dbContext.Products
+                    .Include(p => p.Translations)
+                    .FirstOrDefaultAsync(p => p.Id == productId.Value);
+
                 if (prod == null) return ServiceResult<ShoppingItemDto>.Failure("Produkt z bazy nie istnieje.");
                 itemName = prod.Name;
             }
@@ -169,7 +204,7 @@ namespace Granary.Api.Services.Shopping
                 ShoppingListId = listId,
                 ProductId = productId,
                 Name = itemName,
-                Quantity = dto.Quantity,
+                Quantity = dto.Quantity > 0 ? dto.Quantity : 1,
                 Unit = dto.Unit ?? "szt.",
                 CreatedAt = DateTime.UtcNow
             };
@@ -177,11 +212,13 @@ namespace Granary.Api.Services.Shopping
             _dbContext.ShoppingListItems.Add(item);
             await _dbContext.SaveChangesAsync();
 
+            var transName = prod?.Translations.FirstOrDefault(t => t.LanguageId == targetLangId)?.Name;
+
             return ServiceResult<ShoppingItemDto>.Success(new ShoppingItemDto
             {
                 Id = item.Id,
                 ProductId = item.ProductId,
-                Name = item.Name,
+                Name = transName ?? item.Name,
                 Emoji = emoji,
                 Quantity = item.Quantity,
                 Unit = item.Unit,
@@ -189,7 +226,7 @@ namespace Granary.Api.Services.Shopping
             });
         }
 
-        public async Task<ServiceResult<ShoppingItemDto>> AddFromPantryItemAsync(Guid userId, Guid listId, Guid pantryItemId)
+        public async Task<ServiceResult<ShoppingItemDto>> AddFromPantryItemAsync(Guid userId, Guid listId, Guid pantryItemId, string lang = "pl")
         {
             var pantryItem = await _dbContext.PantryItems
                 .Include(pi => pi.Product)
@@ -204,7 +241,7 @@ namespace Granary.Api.Services.Shopping
                 Unit = pantryItem.Unit
             };
 
-            return await AddItemAsync(userId, listId, addDto);
+            return await AddItemAsync(userId, listId, addDto, lang);
         }
 
         public async Task<ServiceResult<bool>> DeleteItemAsync(Guid userId, Guid listId, Guid itemId)
@@ -263,7 +300,7 @@ namespace Granary.Api.Services.Shopping
                     Id = Guid.NewGuid(),
                     UserId = userId,
                     ProductId = item.ProductId ?? await _catalogService.GetOrCreateCustomProductAsync(userId, item.Name, unit: item.Unit),
-                    StorageLocation = dto.DestinationLocation, 
+                    StorageLocation = dto.DestinationLocation,
                     Status = PantryItemStatus.Active,
                     Quantity = item.Quantity,
                     Unit = item.Unit ?? "szt.",

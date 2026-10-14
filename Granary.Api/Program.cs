@@ -1,10 +1,11 @@
-using System.Text.Json.Serialization;
 using Granary.Api.Extensions;
 using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Services;
+using Granary.Api.Services.Storage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 // ==========================================
 // ŁADOWANIE KONFIGURACJI (.env)
@@ -68,6 +69,14 @@ builder.WebHost.UseSentry(options =>
 // ==========================================
 // PIPELINE APLIKACJI & INICJALIZACJA
 // ==========================================
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ConfigurationLoader = null;   //przeniesc
+});
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<IFileStorageService, LocalFileStorageService>();
+
 var app = builder.Build();
 
 app.UseCustomMiddlewarePipeline();
