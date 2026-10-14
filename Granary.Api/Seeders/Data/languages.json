@@ -1,0 +1,18 @@
+[
+  {
+    "code": "pl",
+    "name": "Polski",
+    "flagEmoji": "🇵🇱",
+    "isActive": true,
+    "isDefault": true,
+    "displayOrder": 1
+  },
+  {
+    "code": "en",
+    "name": "English",
+    "flagEmoji": "🇬🇧",
+    "isActive": true,
+    "isDefault": false,
+    "displayOrder": 2
+  }
+]

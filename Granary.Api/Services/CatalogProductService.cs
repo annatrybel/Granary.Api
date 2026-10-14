@@ -21,16 +21,16 @@ namespace Granary.Api.Services.Catalog
             _logger = logger;
         }
 
-        private static readonly Expression<Func<Product, CatalogProductDto>> DtoSelector = p => new CatalogProductDto
+        private static Expression<Func<Product, CatalogProductDto>> CreateDtoSelector(Guid targetLangId) => p => new CatalogProductDto
         {
             Id = p.Id,
-            Name = p.Name,
+            Name = p.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Name,
             Barcode = p.Barcode,
             ImageUrl = p.ImageUrl,
-            DefaultUnit = p.DefaultUnit,
+            DefaultUnit = p.Translations.Where(t => t.LanguageId == targetLangId && t.Unit != null).Select(t => t.Unit).FirstOrDefault() ?? p.DefaultUnit,
             DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
             CategoryId = p.CategoryId,
-            CategoryName = p.Category.Name,
+            CategoryName = p.Category.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Category.Name,
             CreatedByUserId = p.CreatedByUserId
         };
 
@@ -38,9 +38,22 @@ namespace Granary.Api.Services.Catalog
             string? query,
             Guid? categoryId,
             Guid? currentUserId = null,
-            bool excludePantry = false) 
+            bool excludePantry = false,
+            string lang = "pl")
         {
-            var dbQuery = _dbContext.Products.AsNoTracking();
+            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+
+            var targetLang = await _dbContext.Languages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
+            var targetLangId = targetLang?.Id ?? Guid.Empty;
+
+            var dbQuery = _dbContext.Products
+                .AsNoTracking()
+                .Include(p => p.Translations)
+                .Include(p => p.Category)
+                    .ThenInclude(c => c.Translations)
+                .AsQueryable();
 
             if (currentUserId.HasValue)
             {
@@ -65,7 +78,11 @@ namespace Granary.Api.Services.Catalog
             if (!string.IsNullOrWhiteSpace(query))
             {
                 var normalized = query.ToLower().Trim();
-                dbQuery = dbQuery.Where(p => p.Name.ToLower().Contains(normalized) || (p.Barcode != null && p.Barcode.Contains(normalized)));
+                dbQuery = dbQuery.Where(p =>
+                    p.Name.ToLower().Contains(normalized) ||
+                    (p.Barcode != null && p.Barcode.Contains(normalized)) ||
+                    p.Translations.Any(t => t.LanguageId == targetLangId && t.Name.ToLower().Contains(normalized))
+                );
             }
 
             if (categoryId.HasValue && categoryId.Value != Guid.Empty)
@@ -75,18 +92,27 @@ namespace Granary.Api.Services.Catalog
 
             var results = await dbQuery
                 .Take(50)
-                .Select(DtoSelector)
+                .Select(CreateDtoSelector(targetLangId))
                 .ToListAsync();
 
             return ServiceResult<IEnumerable<CatalogProductDto>>.Success(results);
         }
 
-        public async Task<ServiceResult<CatalogProductDto>> GetByIdAsync(Guid id)
+        public async Task<ServiceResult<CatalogProductDto>> GetByIdAsync(Guid id, string lang = "pl")
         {
+            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+            var targetLang = await _dbContext.Languages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
+            var targetLangId = targetLang?.Id ?? Guid.Empty;
+
             var product = await _dbContext.Products
                 .AsNoTracking()
+                .Include(p => p.Translations)
+                .Include(p => p.Category)
+                    .ThenInclude(c => c.Translations)
                 .Where(p => p.Id == id)
-                .Select(DtoSelector)
+                .Select(CreateDtoSelector(targetLangId))
                 .FirstOrDefaultAsync();
 
             if (product == null)
@@ -97,12 +123,21 @@ namespace Granary.Api.Services.Catalog
             return ServiceResult<CatalogProductDto>.Success(product);
         }
 
-        public async Task<ServiceResult<CatalogProductDto>> GetByBarcodeAsync(string barcode)
+        public async Task<ServiceResult<CatalogProductDto>> GetByBarcodeAsync(string barcode, string lang = "pl")
         {
+            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+            var targetLang = await _dbContext.Languages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
+            var targetLangId = targetLang?.Id ?? Guid.Empty;
+
             var product = await _dbContext.Products
                 .AsNoTracking()
+                .Include(p => p.Translations)
+                .Include(p => p.Category)
+                    .ThenInclude(c => c.Translations)
                 .Where(p => p.Barcode == barcode)
-                .Select(DtoSelector)
+                .Select(CreateDtoSelector(targetLangId))
                 .FirstOrDefaultAsync();
 
             if (product == null)
@@ -152,7 +187,9 @@ namespace Granary.Api.Services.Catalog
 
         public async Task<ServiceResult<CatalogProductDto>> UpdateAsync(Guid id, CreateOrUpdateCatalogProductDto updateDto, Guid? currentUserId = null, bool isAdmin = false)
         {
-            var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _dbContext.Products
+                .Include(p => p.Translations)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
             {
@@ -168,6 +205,15 @@ namespace Granary.Api.Services.Catalog
             if (!categoryExists)
             {
                 return ServiceResult<CatalogProductDto>.Failure("Wskazana kategoria nie istnieje.");
+            }
+
+            // Inwalidacja starych tłumaczeń przy zmianie polskiej nazwy:
+            if (!string.Equals(product.Name, updateDto.Name.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                if (product.Translations.Any())
+                {
+                    _dbContext.ProductTranslations.RemoveRange(product.Translations);
+                }
             }
 
             product.CategoryId = updateDto.CategoryId;
@@ -206,15 +252,22 @@ namespace Granary.Api.Services.Catalog
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<IEnumerable<CategoryDto>>> GetCategoriesAsync()
+        public async Task<ServiceResult<IEnumerable<CategoryDto>>> GetCategoriesAsync(string lang = "pl")
         {
+            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+            var targetLang = await _dbContext.Languages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
+            var targetLangId = targetLang?.Id ?? Guid.Empty;
+
             var categories = await _dbContext.Categories
                 .AsNoTracking()
+                .Include(c => c.Translations)
                 .OrderBy(c => c.DisplayOrder)
                 .Select(c => new CategoryDto
                 {
                     Id = c.Id,
-                    Name = c.Name,
+                    Name = c.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? c.Name,
                     ImageUrl = c.ImageUrl,
                     DisplayOrder = c.DisplayOrder
                 })

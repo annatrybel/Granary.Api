@@ -154,6 +154,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CategorySeeder>();
         services.AddScoped<ProductSeeder>();
         services.AddScoped<RecipeSeeder>();
+        services.AddScoped<LanguageSeeder>();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
@@ -163,6 +164,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IShoppingListService, ShoppingListService>();
         services.AddScoped<IPantryItemService, PantryItemService>();
         services.AddScoped<IRecipeService, RecipeService>();
+        services.AddScoped<IProfileService, ProfileService>();
+
+        services.AddScoped<IAiTranslationService, AiTranslationService>();
+        services.AddScoped<IAiImageService, AiImageService>();
 
         return services;
     }

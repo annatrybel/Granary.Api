@@ -3,12 +3,11 @@ using Granary.Api.Models.Dto.Catalog;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Granary.Api.Controllers.Mobile
 {
     [ApiController]
-    [Authorize] 
+    [Authorize]
     [Route("api/catalog-products")]
     [Produces("application/json")]
     public class CatalogProductsController : GranaryBaseController
@@ -21,7 +20,7 @@ namespace Granary.Api.Controllers.Mobile
         }
 
         /// <summary>
-        /// Wyszukuje produkty w katalogu (systemowe + własne customowe).
+        /// Wyszukuje produkty w katalogu w zadanym języku (systemowe + własne customowe).
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<CatalogProductDto>), StatusCodes.Status200OK)]
@@ -29,11 +28,12 @@ namespace Granary.Api.Controllers.Mobile
         public async Task<IActionResult> Search(
             [FromQuery] string? query,
             [FromQuery] Guid? categoryId,
-            [FromQuery] bool excludePantry = false) 
+            [FromQuery] bool excludePantry = false,
+            [FromQuery] string lang = "pl") 
         {
             var userId = GetCurrentUserId();
 
-            var result = await _catalogService.SearchAsync(query, categoryId, userId, excludePantry);
+            var result = await _catalogService.SearchAsync(query, categoryId, userId, excludePantry, lang);
             return HandleServiceResult(result);
         }
 
@@ -44,9 +44,9 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(CatalogProductDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(Guid id, [FromQuery] string lang = "pl")
         {
-            var result = await _catalogService.GetByIdAsync(id);
+            var result = await _catalogService.GetByIdAsync(id, lang);
             return HandleServiceResult(result);
         }
 
@@ -57,9 +57,9 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(CatalogProductDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetByBarcode(string barcode)
+        public async Task<IActionResult> GetByBarcode(string barcode, [FromQuery] string lang = "pl")
         {
-            var result = await _catalogService.GetByBarcodeAsync(barcode);
+            var result = await _catalogService.GetByBarcodeAsync(barcode, lang);
             return HandleServiceResult(result);
         }
 
@@ -68,9 +68,9 @@ namespace Granary.Api.Controllers.Mobile
         /// </summary>
         [HttpGet("categories")]
         [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetCategories()
+        public async Task<IActionResult> GetCategories([FromQuery] string lang = "pl")
         {
-            var result = await _catalogService.GetCategoriesAsync();
+            var result = await _catalogService.GetCategoriesAsync(lang);
             return HandleServiceResult(result);
         }
 

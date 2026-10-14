@@ -1,5 +1,6 @@
 ﻿using Granary.Api.Models.Dto;
 using Granary.Api.Models.Enums;
+using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,10 +24,10 @@ namespace Granary.Api.Controllers.Mobile
         /// Pobiera zapasy zalogowanego użytkownika.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetMyItems([FromQuery] StorageLocation? location)
+        public async Task<IActionResult> GetMyItems([FromQuery] StorageLocation? location, [FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
-            var result = await _pantryService.GetUserItemsAsync(userId, location);
+            var result = await _pantryService.GetUserItemsAsync(userId, lang, location);
             return HandleServiceResult(result);
         }
 
@@ -68,11 +69,30 @@ namespace Granary.Api.Controllers.Mobile
         /// Pobiera produkty z krótką datą ważności dla Dashboardu (domyślnie do 4 dni).
         /// </summary>
         [HttpGet("expiring")]
-        public async Task<IActionResult> GetExpiringItems([FromQuery] int days = 4, [FromQuery] int limit = 10)
+        public async Task<IActionResult> GetExpiringItems([FromQuery] int days = 4, [FromQuery] int limit = 10, [FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
-            var result = await _pantryService.GetExpiringItemsAsync(userId, days, limit);
+            var result = await _pantryService.GetExpiringItemsAsync(userId, lang, days, limit);
             return HandleServiceResult(result);
+        }
+
+        public record GenerateProductImageRequest(string Name);
+
+
+        [Authorize]
+        [HttpPost("generate-product-image")]
+        public async Task<IActionResult> GenerateProductImage(
+            [FromBody] GenerateProductImageRequest request,
+            [FromServices] IAiImageService imageService)
+        {
+            var result = await imageService.GenerateProductImageAsync(request.Name);
+
+            if (!result.IsValid)
+            {
+                return BadRequest(new { success = false, message = result.ErrorMessage });
+            }
+
+            return Ok(new { success = true, imageUrl = result.ImageUrl });
         }
     }
 }
