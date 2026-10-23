@@ -181,7 +181,6 @@ namespace Granary.Api.Services
                     {
                         r.Id,
                         r.Title,
-                        r.Description,
                         r.Instructions
                     })
                     .ToListAsync();
@@ -195,7 +194,6 @@ namespace Granary.Api.Services
                         r => new RecipeTranslationPayload
                         {
                             Title = r.Title,
-                            Description = r.Description,
                             Instructions = r.Instructions
                         });
 
@@ -216,7 +214,6 @@ namespace Granary.Api.Services
                                 RecipeId = recipeId,
                                 LanguageId = targetLang.Id,
                                 Title = payload.Title.Trim(),
-                                Description = payload.Description?.Trim(),
                                 Instructions = payload.Instructions ?? string.Empty
                             });
                             totalAdded++;

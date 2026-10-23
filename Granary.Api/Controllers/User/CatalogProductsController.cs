@@ -1,5 +1,6 @@
 ﻿using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Catalog;
+using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +30,7 @@ namespace Granary.Api.Controllers.Mobile
             [FromQuery] string? query,
             [FromQuery] Guid? categoryId,
             [FromQuery] bool excludePantry = false,
-            [FromQuery] string lang = "pl") 
+            [FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
 
@@ -50,16 +51,13 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
-        /// <summary>
-        /// Wyszukuje produkt po kodzie kreskowym.
-        /// </summary>
-        [HttpGet("barcode/{barcode}")]
-        [ProducesResponseType(typeof(CatalogProductDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetByBarcode(string barcode, [FromQuery] string lang = "pl")
+        [HttpPost("recognize-image")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> RecognizeImage(
+    IFormFile image, 
+    [FromServices] IAiVisionProductService visionService)
         {
-            var result = await _catalogService.GetByBarcodeAsync(barcode, lang);
+            var result = await visionService.RecognizeProductFromImageAsync(image);
             return HandleServiceResult(result);
         }
 

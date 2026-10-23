@@ -1,9 +1,11 @@
-﻿using Granary.Api.Models.Dto.Contact;
+﻿using Granary.Api.Models;
+using Granary.Api.Models.DatabaseModels;
+using Granary.Api.Models.Dto.Contact;
 using Granary.Api.Models.Dto.Profile;
-using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Granary.Api.Controllers.Mobile
 {
@@ -64,22 +66,61 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
-        /// <summary>
-        /// Odbiera zgłoszenie użytkownika z Centrum Pomocy i wysyła je na skrzynkę e-mail administratora.
-        /// </summary>
-        [HttpPost]
-        [AllowAnonymous] 
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> SendMessage([FromBody] ContactMessageDto dto)
+        [HttpPost("contact")]
+        public async Task<IActionResult> SendContactMessage(
+        [FromBody] ContactMessageDto dto,
+        [FromServices] IEmailService emailService)
         {
-            if (!ModelState.IsValid)
+            var result = await emailService.SendContactMessageToAdminAsync(dto);
+            return HandleServiceResult(result);
+        }
+
+        [HttpPatch("notifications-settings")]
+        public async Task<IActionResult> UpdateExpiryNotifications([FromBody] UpdateExpiryNotificationsDto dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _profileService.UpdateExpiryNotificationsAsync(userId, dto.ExpiryNotifications);
+            return HandleServiceResult(result);
+        }
+
+        [HttpGet("notifications")]
+        [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetNotifications([FromQuery] bool onlyUnread = true)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _profileService.GetNotificationsAsync(userId, onlyUnread);
+            return HandleServiceResult(result);
+        }
+
+        [HttpPatch("notifications/{id:guid}/read")]
+        public async Task<IActionResult> MarkNotificationAsRead([FromRoute] Guid id)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _profileService.MarkNotificationAsReadAsync(userId, id);
+            return HandleServiceResult(result);
+        }
+
+        [HttpPost("push-subscription")]
+        public async Task<IActionResult> SavePushSubscription([FromBody] PushSubscriptionDto dto, [FromServices] GranaryDbContext db)
+        {
+            var userId = GetCurrentUserId();
+
+            var exists = await db.DevicePushSubscriptions
+                .AnyAsync(s => s.UserId == userId && s.Endpoint == dto.Endpoint);
+
+            if (!exists)
             {
-                return BadRequest(ModelState);
+                db.DevicePushSubscriptions.Add(new DevicePushSubscription
+                {
+                    UserId = userId,
+                    Endpoint = dto.Endpoint,
+                    P256dh = dto.P256dh,
+                    Auth = dto.Auth
+                });
+                await db.SaveChangesAsync();
             }
 
-            var result = await _emailService.SendContactMessageToAdminAsync(dto);
-            return HandleServiceResult(result);
+            return NoContent();
         }
     }
 }

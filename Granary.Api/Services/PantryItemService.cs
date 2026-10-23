@@ -16,14 +16,20 @@ namespace Granary.Api.Services
         private readonly ILogger<PantryItemService> _logger;
         private readonly IFileStorageService _fileStorageService;
 
-        public PantryItemService(GranaryDbContext dbContext, ILogger<PantryItemService> logger, IFileStorageService fileStorageService)
+        public PantryItemService(
+            GranaryDbContext dbContext,
+            ILogger<PantryItemService> logger,
+            IFileStorageService fileStorageService)
         {
             _dbContext = dbContext;
             _logger = logger;
             _fileStorageService = fileStorageService;
         }
 
-        public async Task<ServiceResult<IEnumerable<PantryItemDto>>> GetUserItemsAsync(Guid userId, string lang = "pl", StorageLocation? location = null)
+        public async Task<ServiceResult<IEnumerable<PantryItemDto>>> GetUserItemsAsync(
+            Guid userId,
+            string lang = "pl",
+            StorageLocation? location = null)
         {
             var query = _dbContext.PantryItems
                 .AsNoTracking()
@@ -60,7 +66,10 @@ namespace Granary.Api.Services
             return ServiceResult<IEnumerable<PantryItemDto>>.Success(items);
         }
 
-        public async Task<ServiceResult<PantryItemDto>> GetByIdAsync(Guid userId, Guid pantryItemId, string lang = "pl")
+        public async Task<ServiceResult<PantryItemDto>> GetByIdAsync(
+            Guid userId,
+            Guid pantryItemId,
+            string lang = "pl")
         {
             var item = await _dbContext.PantryItems
                 .AsNoTracking()
@@ -87,18 +96,28 @@ namespace Granary.Api.Services
                 })
                 .FirstOrDefaultAsync();
 
-            if (item == null) return ServiceResult<PantryItemDto>.Failure("Nie znaleziono produktu.");
+            if (item == null)
+            {
+                return ServiceResult<PantryItemDto>.Failure("Nie znaleziono produktu.");
+            }
+
             return ServiceResult<PantryItemDto>.Success(item);
         }
 
-        public async Task<ServiceResult<PantryItemDto>> AddItemAsync(Guid userId, CreateOrUpdatePantryItemDto dto, string lang = "pl")
+        public async Task<ServiceResult<PantryItemDto>> AddItemAsync(
+            Guid userId,
+            CreateOrUpdatePantryItemDto dto,
+            string lang = "pl")
         {
             Guid targetProductId;
 
             if (dto.ProductId.HasValue && dto.ProductId.Value != Guid.Empty)
             {
                 var productExists = await _dbContext.Products.AnyAsync(p => p.Id == dto.ProductId.Value);
-                if (!productExists) return ServiceResult<PantryItemDto>.Failure("Wybrany produkt nie istnieje.");
+                if (!productExists)
+                {
+                    return ServiceResult<PantryItemDto>.Failure("Wybrany produkt nie istnieje.");
+                }
                 targetProductId = dto.ProductId.Value;
             }
             else if (!string.IsNullOrWhiteSpace(dto.CustomProductName))
@@ -125,12 +144,7 @@ namespace Granary.Api.Services
                         categoryId = defaultCat?.Id ?? Guid.NewGuid();
                     }
 
-                    string? persistentImageUrl = dto.CustomImageUrl;
-                    if (!string.IsNullOrWhiteSpace(dto.CustomImageUrl) && dto.CustomImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var localUrl = await _fileStorageService.SaveImageFromUrlAsync(dto.CustomImageUrl, "products");
-                        if (!string.IsNullOrEmpty(localUrl)) persistentImageUrl = localUrl;
-                    }
+                    string? persistentImageUrl = await _fileStorageService.ProcessImageAsync(dto.CustomImageUrl, null, "products");
 
                     var newCustomProduct = new Product
                     {
@@ -152,12 +166,19 @@ namespace Granary.Api.Services
             }
 
             var existingItem = await _dbContext.PantryItems
-                .FirstOrDefaultAsync(pi => pi.UserId == userId && pi.ProductId == targetProductId && pi.StorageLocation == dto.Location && pi.Status == PantryItemStatus.Active);
+                .FirstOrDefaultAsync(pi => pi.UserId == userId
+                                        && pi.ProductId == targetProductId
+                                        && pi.StorageLocation == dto.Location
+                                        && pi.Status == PantryItemStatus.Active);
 
             if (existingItem != null)
             {
                 existingItem.Quantity += dto.Quantity > 0 ? dto.Quantity : 1;
-                if (dto.ExpirationDate != default) existingItem.ExpirationDate = dto.ExpirationDate;
+                if (dto.ExpirationDate != default)
+                {
+                    existingItem.ExpirationDate = dto.ExpirationDate;
+                }
+
                 await _dbContext.SaveChangesAsync();
                 return await GetByIdAsync(userId, existingItem.Id, lang);
             }
@@ -183,10 +204,10 @@ namespace Granary.Api.Services
         }
 
         public async Task<ServiceResult<PantryItemDto>> UpdateItemAsync(
-    Guid userId,
-    Guid pantryItemId,
-    CreateOrUpdatePantryItemDto dto,
-    string lang = "pl")
+            Guid userId,
+            Guid pantryItemId,
+            CreateOrUpdatePantryItemDto dto,
+            string lang = "pl")
         {
             var item = await _dbContext.PantryItems
                 .Include(pi => pi.Product)
@@ -216,7 +237,7 @@ namespace Granary.Api.Services
             {
                 item.Unit = dto.Unit.Trim();
             }
-
+                       
             if (item.Product.CreatedByUserId == userId)
             {
                 if (dto.CustomCategoryId.HasValue && dto.CustomCategoryId.Value != Guid.Empty)
@@ -245,20 +266,12 @@ namespace Granary.Api.Services
                     item.Product.DefaultUnit = dto.Unit.Trim();
                 }
 
-                if (!string.IsNullOrWhiteSpace(dto.CustomImageUrl) && dto.CustomImageUrl != item.Product.ImageUrl)
+                if (dto.CustomImageUrl != item.Product.ImageUrl)
                 {
-                    string? persistentImageUrl = dto.CustomImageUrl;
-
-                    if (dto.CustomImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && !dto.CustomImageUrl.Contains("/uploads/"))
-                    {
-                        var localUrl = await _fileStorageService.SaveImageFromUrlAsync(dto.CustomImageUrl, "products");
-                        if (!string.IsNullOrEmpty(localUrl))
-                        {
-                            persistentImageUrl = localUrl;
-                        }
-                    }
-
-                    item.Product.ImageUrl = persistentImageUrl;
+                    item.Product.ImageUrl = await _fileStorageService.ProcessImageAsync(
+                        dto.CustomImageUrl,
+                        item.Product.ImageUrl,
+                        "products");
                 }
             }
 
@@ -272,8 +285,14 @@ namespace Granary.Api.Services
 
         public async Task<ServiceResult<bool>> DeleteItemAsync(Guid userId, Guid pantryItemId)
         {
-            var item = await _dbContext.PantryItems.Include(pi => pi.Product).FirstOrDefaultAsync(pi => pi.Id == pantryItemId && pi.UserId == userId);
-            if (item == null) return ServiceResult<bool>.Failure("Nie znaleziono produktu.");
+            var item = await _dbContext.PantryItems
+                .Include(pi => pi.Product)
+                .FirstOrDefaultAsync(pi => pi.Id == pantryItemId && pi.UserId == userId);
+
+            if (item == null)
+            {
+                return ServiceResult<bool>.Failure("Nie znaleziono produktu.");
+            }
 
             var productId = item.ProductId;
             var isCustomProduct = item.Product.CreatedByUserId == userId;
@@ -291,8 +310,14 @@ namespace Granary.Api.Services
                     var customProduct = await _dbContext.Products.FindAsync(productId);
                     if (customProduct != null)
                     {
+                        if (!string.IsNullOrWhiteSpace(customProduct.ImageUrl))
+                        {
+                            _fileStorageService.DeleteFile(customProduct.ImageUrl);
+                        }
+
                         _dbContext.Products.Remove(customProduct);
                         await _dbContext.SaveChangesAsync();
+                        _logger.LogInformation("Usunięto nieużywany produkt własny {ProductId} oraz jego zdjęcie z bazy i storage.", productId);
                     }
                 }
             }
@@ -300,22 +325,35 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<IEnumerable<ExpiringPantryItemDto>>> GetExpiringItemsAsync(Guid userId, string lang = "pl", int days = 4, int limit = 10)
+        public async Task<ServiceResult<IEnumerable<ExpiringPantryItemDto>>> GetExpiringItemsAsync(
+            Guid userId,
+            string lang = "pl",
+            int days = 4,
+            int limit = 10)
         {
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var maxDate = today.AddDays(days);
 
             var items = await _dbContext.PantryItems
                 .AsNoTracking()
-                .Where(pi => pi.UserId == userId && pi.Status == PantryItemStatus.Active && pi.ExpirationDate != default && pi.ExpirationDate <= maxDate)
+                .Where(pi => pi.UserId == userId
+                          && pi.Status == PantryItemStatus.Active
+                          && pi.ExpirationDate != default
+                          && pi.ExpirationDate <= maxDate)
                 .OrderBy(pi => pi.ExpirationDate)
                 .Take(limit)
                 .Select(pi => new ExpiringPantryItemDto
                 {
                     Id = pi.Id,
-                    ProductName = pi.Product.Translations.Where(t => t.Language.Code == lang).Select(t => t.Name).FirstOrDefault() ?? pi.Product.Name,
+                    ProductName = pi.Product.Translations
+                        .Where(t => t.Language.Code == lang)
+                        .Select(t => t.Name)
+                        .FirstOrDefault() ?? pi.Product.Name,
                     ProductImageUrl = pi.Product.ImageUrl,
-                    CategoryName = pi.Product.Category.Translations.Where(t => t.Language.Code == lang).Select(t => t.Name).FirstOrDefault() ?? pi.Product.Category.Name,
+                    CategoryName = pi.Product.Category.Translations
+                        .Where(t => t.Language.Code == lang)
+                        .Select(t => t.Name)
+                        .FirstOrDefault() ?? pi.Product.Category.Name,
                     CategoryImageUrl = pi.Product.Category.ImageUrl,
                     StorageLocation = pi.StorageLocation,
                     ExpirationDate = pi.ExpirationDate,

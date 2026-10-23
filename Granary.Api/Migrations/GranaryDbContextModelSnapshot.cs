@@ -48,6 +48,9 @@ namespace Granary.Api.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("ExpiryNotifications")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Language")
                         .IsRequired()
                         .HasColumnType("text");
@@ -147,6 +150,32 @@ namespace Granary.Api.Migrations
                     b.ToTable("CategoryTranslations");
                 });
 
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.DevicePushSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DevicePushSubscriptions");
+                });
+
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Language", b =>
                 {
                     b.Property<Guid>("Id")
@@ -237,6 +266,41 @@ namespace Granary.Api.Migrations
                     b.HasIndex("RecipeId");
 
                     b.ToTable("MealPlanRecipes");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DaysRemaining")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("PantryItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PantryItemId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.PantryItem", b =>
@@ -373,19 +437,14 @@ namespace Granary.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("Calories")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Emoji")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
@@ -449,10 +508,6 @@ namespace Granary.Api.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Instructions")
                         .IsRequired()
@@ -817,6 +872,23 @@ namespace Granary.Api.Migrations
                     b.Navigation("MealPlan");
 
                     b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Notification", b =>
+                {
+                    b.HasOne("Granary.Api.Models.DatabaseModels.PantryItem", "PantryItem")
+                        .WithMany()
+                        .HasForeignKey("PantryItemId");
+
+                    b.HasOne("Granary.Api.Models.DatabaseModels.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PantryItem");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.PantryItem", b =>

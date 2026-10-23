@@ -39,13 +39,13 @@ namespace Granary.Api.Controllers.Admin
         /// <summary>
         /// Pobiera listę użytkowników w formacie tabelarycznym (Server-side rendering).
         /// </summary>
-        /// <param name="request">Parametry tabeli (wyszukiwanie, sortowanie, stronicowanie).</param>
-        [HttpPost("get-all-users")]
-        [ProducesResponseType(typeof(DataTableResponse<UserDto>), StatusCodes.Status200OK)]
+        /// <param name="request">Parametry tabeli (wyszukiwanie, sortowanie, stronicowanie).</param>        
+        [HttpGet("get-all-users")]
+        [ProducesResponseType(typeof(PagedResult<UserDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetAllUsers([FromBody] DataTableRequest request)
+        public async Task<IActionResult> GetAllUsers([FromQuery] PagedQueryDto query)
         {
-            var serviceResponse = await _userManagementService.GetAllUsers(request);
+            var serviceResponse = await _userManagementService.GetAllUsersAsync(query);
             return HandleServiceResult(serviceResponse);
         }
 

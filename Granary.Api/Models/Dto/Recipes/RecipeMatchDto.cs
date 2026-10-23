@@ -4,10 +4,10 @@
     {
         public Guid RecipeId { get; set; }
         public string Title { get; set; } = string.Empty;
-        public string? Description { get; set; }
         public string? ImageUrl { get; set; }
         public int PrepTimeMinutes { get; set; }
         public int Servings { get; set; }
+        public int? Calories { get; set; }
 
         public int MatchPercentage { get; set; }
         public int OwnedIngredientsCount { get; set; }

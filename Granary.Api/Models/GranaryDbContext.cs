@@ -29,6 +29,8 @@ namespace Granary.Api.Models
         public DbSet<ProductTranslation> ProductTranslations { get; set; }
         public DbSet<RecipeTranslation> RecipeTranslations { get; set; }
         public DbSet<CategoryTranslation> CategoryTranslations { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<DevicePushSubscription> DevicePushSubscriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

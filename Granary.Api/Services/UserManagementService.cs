@@ -20,7 +20,11 @@ namespace Granary.Api.Services
 
         private const string ObjectName = "User";
 
-        public UserManagementService(GranaryDbContext context, ILogger<UserManagementService> logger, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<Guid>> roleManager)
+        public UserManagementService(
+            GranaryDbContext context,
+            ILogger<UserManagementService> logger,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole<Guid>> roleManager)
         {
             _context = context;
             _logger = logger;
@@ -32,7 +36,7 @@ namespace Granary.Api.Services
         {
             try
             {
-                var roles = await _roleManager.Roles.ToListAsync();
+                var roles = await _roleManager.Roles.AsNoTracking().ToListAsync();
                 return ServiceResult<List<IdentityRole<Guid>>>.Success(roles);
             }
             catch (Exception ex)
@@ -42,37 +46,44 @@ namespace Granary.Api.Services
             }
         }
 
-        public async Task<ServiceResult<DataTableResponse<UserDto>>> GetAllUsers(DataTableRequest request)
+        public async Task<ServiceResult<PagedResult<UserDto>>> GetAllUsersAsync(PagedQueryDto query)
         {
             try
             {
-                string[] columnNames = { "UserName", "Email", "Role" };
-                string sortColumn = (request.OrderColumn >= 0 && request.OrderColumn < columnNames.Length) ? columnNames[request.OrderColumn] : "UserName";
-                string sortDirection = request.OrderDir?.ToUpper() == "DESC" ? "DESC" : "ASC";
+                var page = query.Page < 1 ? 1 : query.Page;
+                var pageSize = query.PageSize < 1 ? 10 : query.PageSize;
+
+                string? search = string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim();
+
+                string sortColumn = !string.IsNullOrWhiteSpace(query.SortBy) ? query.SortBy : "UserName";
+                string sortDirection = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
 
                 var filteredUsers = await _context.Set<UserDto>()
-                    .FromSqlInterpolated($"SELECT * FROM public.get_users_with_roles({request.SearchValue ?? (object)DBNull.Value}, {sortColumn}, {sortDirection})")
+                    .FromSqlInterpolated($"SELECT * FROM public.get_users_with_roles({search}, {sortColumn}, {sortDirection})")
+                    .AsNoTracking()
                     .ToListAsync();
 
-                int totalRecords = await _context.Users.CountAsync();
-                int filteredRecords = filteredUsers.Count;
+                var totalCount = filteredUsers.Count;
 
-                return ServiceResult<DataTableResponse<UserDto>>.Success(
-                    new DataTableResponse<UserDto>
-                    {
-                        Draw = request.Draw,
-                        RecordsTotal = totalRecords,
-                        RecordsFiltered = filteredRecords,
-                        Data = filteredUsers
-                    });
+                var pagedItems = filteredUsers
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return ServiceResult<PagedResult<UserDto>>.Success(new PagedResult<UserDto>
+                {
+                    Items = pagedItems,
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching users with roles: {ErrorDetails}", ex.ToString());
-                return ServiceResult<DataTableResponse<UserDto>>.Failure(CommonErrors.DataProcessingError("Błąd pobierania listy użytkowników."));
+                _logger.LogError(ex, "Error fetching users with roles using function get_users_with_roles: {ErrorDetails}", ex.ToString());
+                return ServiceResult<PagedResult<UserDto>>.Failure(CommonErrors.DataProcessingError("Błąd pobierania listy użytkowników."));
             }
         }
-
 
         public async Task<ServiceResult> LockUser(string userId)
         {
@@ -83,7 +94,7 @@ namespace Granary.Api.Services
                     return ServiceResult.Failure(CommonErrors.NotFound(ObjectName, userId));
 
                 await _userManager.SetLockoutEnabledAsync(user, true);
-                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue); 
+                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
 
                 _logger.LogInformation("User {UserId} locked permanently", userId);
                 return ServiceResult.Success();
@@ -129,12 +140,9 @@ namespace Granary.Api.Services
                 if (existingUserByEmail != null)
                     return ServiceResult<UserDto>.Failure(AuthErrors.UserAlreadyExists());
 
-                var role = await _context.Roles.FindAsync(user.RoleId);
-                if (role == null)
+                var role = await _context.Roles.FindAsync(Guid.Parse(user.RoleId));
+                if (role == null || string.IsNullOrEmpty(role.Name))
                     return ServiceResult<UserDto>.Failure(UserManagementErrors.RoleNotFound(user.RoleId));
-
-                if (string.IsNullOrEmpty(role.Name))
-                    return ServiceResult<UserDto>.Failure(UserManagementErrors.RoleNotFound(user.RoleId)); 
 
                 if (role.Name.Equals("Administrator", StringComparison.OrdinalIgnoreCase))
                 {
@@ -195,7 +203,7 @@ namespace Granary.Api.Services
                 if (user == null)
                     return ServiceResult.Failure(CommonErrors.NotFound(ObjectName, model.UserId));
 
-                var role = await _context.Roles.FindAsync(model.RoleId);
+                var role = await _context.Roles.FindAsync(Guid.Parse(model.RoleId));
                 if (role == null)
                     return ServiceResult.Failure(UserManagementErrors.RoleNotFound(model.RoleId));
 
@@ -232,7 +240,7 @@ namespace Granary.Api.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, $"Error updating roles/user {model.UserId}");
+                _logger.LogError(ex, "Error updating roles/user {UserId}", model.UserId);
                 return ServiceResult.Failure(CommonErrors.UpdateFailed(ObjectName, model.UserId));
             }
         }
@@ -241,8 +249,9 @@ namespace Granary.Api.Services
         {
             try
             {
+                var userGuid = Guid.Parse(userId);
                 var userData = await _context.Users
-                     .Where(u => u.Id.ToString() == userId)
+                     .Where(u => u.Id == userGuid)
                      .Join(_context.UserRoles,
                            u => u.Id,
                            ur => ur.UserId,
@@ -273,7 +282,7 @@ namespace Granary.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"GetUserById error {userId}");
+                _logger.LogError(ex, "GetUserById error {UserId}", userId);
                 return ServiceResult<UserDto>.Failure(CommonErrors.FetchFailed(ObjectName));
             }
         }

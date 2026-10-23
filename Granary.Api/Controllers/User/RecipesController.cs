@@ -25,7 +25,7 @@ namespace Granary.Api.Controllers.Mobile
         /// Obsługuje stronicowanie (Infinite Scroll), filtry backendowe, wyszukiwanie oraz scope (all / favorites / custom).
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(PagedRecipesResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedResult<RecipeMatchDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRecipes([FromQuery] RecipeFilterQueryDto filter)
         {
             var userId = GetCurrentUserId();

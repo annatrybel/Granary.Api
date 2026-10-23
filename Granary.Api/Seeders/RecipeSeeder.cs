@@ -73,7 +73,6 @@ namespace Granary.Api.Seeders
                     {
                         Id = recipeId,
                         Title = rModel.Title.Trim(),
-                        Description = rModel.Description,
                         Instructions = rModel.Instructions,
                         PrepTimeMinutes = rModel.PrepTimeMinutes > 0 ? rModel.PrepTimeMinutes : 15,
                         Servings = rModel.Servings > 0 ? rModel.Servings : 2,

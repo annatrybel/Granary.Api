@@ -15,14 +15,6 @@ namespace Granary.Api.Models.Dto.Profile
     public record UpdateDarkModeDto(bool DarkMode);
 
     public record UpdateLanguageDto(string Language);
-
-    public class UpdateProfileDto
-    {
-        public string? Username { get; set; }
-        public IFormFile? Avatar { get; set; }
-    }
-
-    public record UpdateProfileResponseDto(string? AvatarUrl);
-
+   
     public record SendInvitationRequestDto(string RecipientEmail, string PantryName);
 }

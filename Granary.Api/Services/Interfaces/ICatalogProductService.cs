@@ -8,7 +8,6 @@ namespace Granary.Api.Services.Interfaces
     {
         Task<ServiceResult<IEnumerable<CatalogProductDto>>> SearchAsync( string? query,Guid? categoryId, Guid? currentUserId = null, bool excludePantry = false, string lang = "pl");
         Task<ServiceResult<CatalogProductDto>> GetByIdAsync(Guid id, string lang = "pl");
-        Task<ServiceResult<CatalogProductDto>> GetByBarcodeAsync(string barcode, string lang = "pl");
         Task<ServiceResult<CatalogProductDto>> CreateAsync(CreateOrUpdateCatalogProductDto createDto, Guid? currentUserId = null);
         Task<ServiceResult<CatalogProductDto>> UpdateAsync(Guid id, CreateOrUpdateCatalogProductDto updateDto, Guid? currentUserId = null, bool isAdmin = false);
         Task<ServiceResult<bool>> DeleteAsync(Guid id, Guid? currentUserId = null, bool isAdmin = false);

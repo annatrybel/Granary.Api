@@ -45,7 +45,7 @@ builder.Services.AddCustomAuthentication(builder.Configuration);
 builder.Services.AddCustomCors(builder.Configuration);
 builder.Services.AddCustomRateLimiter();
 builder.Services.AddCustomSwagger();
-builder.Services.AddBusinessServices();
+builder.Services.AddBusinessServices(builder.Configuration);
 
 builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
@@ -59,13 +59,6 @@ builder.Services.AddControllers()
 
 builder.Services.AddEndpointsApiExplorer();
 
-builder.WebHost.UseSentry(options =>
-{
-    options.Dsn = builder.Configuration["Sentry:Dsn"] ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
-    options.Debug = true;
-    options.TracesSampleRate = 1.0;
-});
-
 // ==========================================
 // PIPELINE APLIKACJI & INICJALIZACJA
 // ==========================================
@@ -75,7 +68,7 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddHttpClient<IFileStorageService, FileStorageService>();  //przeniesc do rozszerzen
 
 var app = builder.Build();
 

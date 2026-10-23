@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Granary.Api.Controllers.AdminPanel
 {
     [ApiController]
-    [Authorize(Roles = "Admin")] 
+    [Authorize(Roles = "Administrator")] 
     [Route("api/admin/catalog-products")]
     [Produces("application/json")]
     public class AdminCatalogProductsController : GranaryBaseController

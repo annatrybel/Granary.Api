@@ -1,8 +1,10 @@
-﻿using Granary.Api.Seeders;
+﻿using Granary.Api.Jobs;
+using Granary.Api.Seeders;
 using Granary.Api.Services;
 using Granary.Api.Services.Catalog;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Shopping;
+using Granary.Api.Services.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -147,8 +149,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddBusinessServices(this IServiceCollection services)
+    public static IServiceCollection AddBusinessServices(this IServiceCollection services, IConfiguration configuration)
     {
+        // Seedery
         services.AddScoped<RoleSeeder>();
         services.AddScoped<SeedManager>();
         services.AddScoped<CategorySeeder>();
@@ -156,6 +159,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RecipeSeeder>();
         services.AddScoped<LanguageSeeder>();
 
+        // Serwisy domenowe
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IEmailService, EmailService>();
@@ -165,9 +169,21 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPantryItemService, PantryItemService>();
         services.AddScoped<IRecipeService, RecipeService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IAdminRecipeService, AdminRecipeService>();
 
+        // Serwisy AI
         services.AddScoped<IAiTranslationService, AiTranslationService>();
         services.AddScoped<IAiImageService, AiImageService>();
+        services.AddScoped<IAiVisionProductService, AiVisionProductService>();
+
+        // Powiadomienia w tle
+        services.AddHostedService<ExpiryNotificationWorker>();
+        services.AddScoped<IWebPushService, WebPushService>();
+
+        services.Configure<FileStorageSettings>(
+                 configuration.GetSection(FileStorageSettings.SectionName));
+
+        services.AddHttpClient<IFileStorageService, FileStorageService>();
 
         return services;
     }

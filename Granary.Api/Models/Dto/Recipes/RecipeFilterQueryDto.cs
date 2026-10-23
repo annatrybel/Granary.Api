@@ -13,13 +13,5 @@
         public int PageSize { get; set; } = 20;
         public string Lang { get; set; } = "pl";
     }
-
-    public class PagedRecipesResultDto
-    {
-        public IEnumerable<RecipeMatchDto> Items { get; set; } = Enumerable.Empty<RecipeMatchDto>();
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public bool HasMore { get; set; }
-    }
+    
 }

@@ -1,5 +1,6 @@
 ﻿using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
+using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Recipes;
 using Granary.Api.Models.Enums;
 using Granary.Api.Services.Interfaces;
@@ -24,7 +25,7 @@ namespace Granary.Api.Services
             _fileStorageService = fileStorageService;
         }
 
-        public async Task<ServiceResult<PagedRecipesResultDto>> GetFilteredRecipesAsync(Guid userId, RecipeFilterQueryDto filter)
+        public async Task<ServiceResult<PagedResult<RecipeMatchDto>>> GetFilteredRecipesAsync(Guid userId, RecipeFilterQueryDto filter)
         {
             var page = filter.Page < 1 ? 1 : filter.Page;
             var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
@@ -98,8 +99,6 @@ namespace Granary.Api.Services
                 recipesQuery = recipesQuery.Where(r =>
                     r.Title.ToLower().Contains(normalized) ||
                     r.Translations.Any(t => t.Title.ToLower().Contains(normalized)) ||
-                    (r.Description != null && r.Description.ToLower().Contains(normalized)) ||
-                    r.Translations.Any(t => t.Description != null && t.Description.ToLower().Contains(normalized)) ||
                     r.Ingredients.Any(i =>
                         i.Product.Name.ToLower().Contains(normalized) ||
                         i.Product.Translations.Any(pt => pt.Name.ToLower().Contains(normalized)))
@@ -113,12 +112,10 @@ namespace Granary.Api.Services
 
             var matchingRecipes = await recipesQuery.ToListAsync();
 
-            // 3. Mapowanie DTO z uwzględnieniem tłumaczenia
             var processed = matchingRecipes.Select(recipe =>
             {
                 var trans = recipe.Translations.FirstOrDefault(t => t.LanguageId == targetLangId);
                 var localizedTitle = trans?.Title ?? recipe.Title;
-                var localizedDesc = trans?.Description ?? recipe.Description;
 
                 var requiredIngredients = recipe.Ingredients.Where(i => !i.IsOptional).ToList();
                 var totalCount = requiredIngredients.Count;
@@ -161,10 +158,10 @@ namespace Granary.Api.Services
                     {
                         RecipeId = recipe.Id,
                         Title = localizedTitle,
-                        Description = localizedDesc,
                         ImageUrl = recipe.ImageUrl,
                         PrepTimeMinutes = recipe.PrepTimeMinutes,
                         Servings = recipe.Servings,
+                        Calories = recipe.Calories,
                         MatchPercentage = matchPct,
                         OwnedIngredientsCount = ownedCount,
                         TotalIngredientsCount = totalCount,
@@ -204,13 +201,12 @@ namespace Granary.Api.Services
             var list = sorted.ToList();
             var totalCount = list.Count;
 
-            return ServiceResult<PagedRecipesResultDto>.Success(new PagedRecipesResultDto
+            return ServiceResult<PagedResult<RecipeMatchDto>>.Success(new PagedResult<RecipeMatchDto>
             {
                 Items = list.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
                 TotalCount = totalCount,
                 Page = page,
-                PageSize = pageSize,
-                HasMore = (page * pageSize) < totalCount
+                PageSize = pageSize
             });
         }
 
@@ -249,18 +245,17 @@ namespace Granary.Api.Services
                 .Select(x => x.Vote)
                 .ToListAsync();
 
-            // Pobieramy tłumaczenie przepisu
             var trans = recipe.Translations.FirstOrDefault(t => t.LanguageId == targetLangId);
 
             var detail = new RecipeDetailDto
             {
                 Id = recipe.Id,
                 Title = trans?.Title ?? recipe.Title,
-                Description = trans?.Description ?? recipe.Description,
                 Instructions = trans?.Instructions ?? recipe.Instructions,
                 ImageUrl = recipe.ImageUrl,
                 PrepTimeMinutes = recipe.PrepTimeMinutes,
                 Servings = recipe.Servings,
+                Calories = recipe.Calories,
                 IsFavorite = userInteraction?.IsFavorite ?? false,
                 IsCustom = recipe.CreatedByUserId == userId,
                 LikesCount = allVotes.Count(v => v == true),
@@ -281,7 +276,7 @@ namespace Granary.Api.Services
 
             return ServiceResult<RecipeDetailDto>.Success(detail);
         }
-                
+
         public async Task<ServiceResult<bool>> ToggleFavoriteAsync(Guid recipeId, Guid userId)
         {
             var interaction = await _context.UserRecipeInteractions
@@ -376,15 +371,7 @@ namespace Granary.Api.Services
                 return ServiceResult<RecipeDetailDto>.Failure("Nazwa przepisu nie może być pusta.");
             }
 
-            string? persistentImageUrl = dto.ImageUrl;
-            if (!string.IsNullOrWhiteSpace(dto.ImageUrl) && dto.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                var localUrl = await _fileStorageService.SaveImageFromUrlAsync(dto.ImageUrl, "recipes");
-                if (!string.IsNullOrEmpty(localUrl))
-                {
-                    persistentImageUrl = localUrl;
-                }
-            }
+            string? persistentImageUrl = await _fileStorageService.ProcessImageAsync(dto.ImageUrl, null, "recipes");
 
             var instructions = dto.Steps != null && dto.Steps.Any()
                 ? string.Join("\n", dto.Steps.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()))
@@ -394,13 +381,11 @@ namespace Granary.Api.Services
             {
                 Id = Guid.NewGuid(),
                 Title = dto.Title.Trim(),
-                Description = !string.IsNullOrWhiteSpace(dto.Description)
-                    ? dto.Description.Trim()
-                    : (!string.IsNullOrWhiteSpace(dto.Category) ? $"Kategoria: {dto.Category}" : null),
-                ImageUrl = persistentImageUrl, 
+                ImageUrl = persistentImageUrl,
                 Instructions = instructions,
                 PrepTimeMinutes = dto.PrepTimeMinutes > 0 ? dto.PrepTimeMinutes : 15,
                 Servings = dto.Servings > 0 ? dto.Servings : 1,
+                Calories = dto.Calories,
                 CreatedByUserId = userId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -451,18 +436,17 @@ namespace Granary.Api.Services
             }
 
             _context.Recipes.Add(recipe);
-
             await _context.SaveChangesAsync();
 
             var detailDto = new RecipeDetailDto
             {
                 Id = recipe.Id,
                 Title = recipe.Title,
-                Description = recipe.Description,
                 Instructions = recipe.Instructions,
                 ImageUrl = recipe.ImageUrl,
                 PrepTimeMinutes = recipe.PrepTimeMinutes,
                 Servings = recipe.Servings,
+                Calories = recipe.Calories,
                 IsFavorite = true,
                 LikesCount = 0,
                 DislikesCount = 0,
@@ -481,21 +465,6 @@ namespace Granary.Api.Services
             return ServiceResult<RecipeDetailDto>.Success(detailDto);
         }
 
-        private static (decimal quantity, string unit) ParseQuantityAndUnit(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input)) return (1m, "szt.");
-            input = input.Trim().Replace(',', '.');
-            var match = Regex.Match(input, @"^([0-9]+(?:\.[0-9]+)?)\s*(.*)$");
-
-            if (match.Success && decimal.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var qty))
-            {
-                var unit = match.Groups[2].Value.Trim();
-                return (qty, string.IsNullOrEmpty(unit) ? "szt." : unit);
-            }
-
-            return (1m, "szt.");
-        }
-
         public async Task<ServiceResult<bool>> DeleteRecipeAsync(Guid recipeId, Guid userId)
         {
             var recipe = await _context.Recipes
@@ -512,11 +481,11 @@ namespace Granary.Api.Services
                 return ServiceResult<bool>.Failure("Brak uprawnień do usunięcia tego przepisu.");
             }
 
-            // Przed _context.Recipes.Remove(recipe);
             if (!string.IsNullOrWhiteSpace(recipe.ImageUrl))
             {
                 _fileStorageService.DeleteFile(recipe.ImageUrl);
             }
+
             var interactions = await _context.UserRecipeInteractions.Where(x => x.RecipeId == recipeId).ToListAsync();
             _context.UserRecipeInteractions.RemoveRange(interactions);
             _context.RecipeIngredients.RemoveRange(recipe.Ingredients);
@@ -533,9 +502,7 @@ namespace Granary.Api.Services
                 return ServiceResult<RecipeDetailDto>.Failure("Nazwa przepisu nie może być pusta.");
             }
 
-            var recipe = await _context.Recipes
-                .FirstOrDefaultAsync(r => r.Id == recipeId);
-
+            var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == recipeId);
             if (recipe == null)
             {
                 return ServiceResult<RecipeDetailDto>.Failure("Przepis nie istnieje.");
@@ -546,38 +513,19 @@ namespace Granary.Api.Services
                 return ServiceResult<RecipeDetailDto>.Failure("Brak uprawnień do edycji tego przepisu.");
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.ImageUrl) && dto.ImageUrl != recipe.ImageUrl)
-            {
-                if (dto.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) && !dto.ImageUrl.Contains("/uploads/"))
-                {
-                    _fileStorageService.DeleteFile(recipe.ImageUrl);
-
-                    var localUrl = await _fileStorageService.SaveImageFromUrlAsync(dto.ImageUrl, "recipes");
-                    recipe.ImageUrl = localUrl ?? dto.ImageUrl;
-                }
-                else
-                {
-                    recipe.ImageUrl = dto.ImageUrl;
-                }
-            }
+            recipe.ImageUrl = await _fileStorageService.ProcessImageAsync(dto.ImageUrl, recipe.ImageUrl, "recipes");
 
             var instructions = dto.Steps != null && dto.Steps.Any()
                 ? string.Join("\n", dto.Steps.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()))
                 : recipe.Instructions;
 
             recipe.Title = dto.Title.Trim();
-            recipe.Description = !string.IsNullOrWhiteSpace(dto.Category) ? $"Kategoria: {dto.Category}" : dto.Description;
             recipe.Instructions = instructions;
             recipe.PrepTimeMinutes = dto.PrepTimeMinutes > 0 ? dto.PrepTimeMinutes : recipe.PrepTimeMinutes;
             recipe.Servings = dto.Servings > 0 ? dto.Servings : recipe.Servings;
-            if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
-            {
-                recipe.ImageUrl = dto.ImageUrl;
-            }
+            recipe.Calories = dto.Calories;
 
-            var oldIngredients = await _context.RecipeIngredients
-                .Where(ri => ri.RecipeId == recipeId)
-                .ToListAsync();
+            var oldIngredients = await _context.RecipeIngredients.Where(ri => ri.RecipeId == recipeId).ToListAsync();
             _context.RecipeIngredients.RemoveRange(oldIngredients);
 
             var defaultCategory = await _context.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == "inne")
@@ -630,10 +578,24 @@ namespace Granary.Api.Services
             }
 
             await _context.RecipeIngredients.AddRangeAsync(newIngredients);
-
             await _context.SaveChangesAsync();
 
             return await GetByIdAsync(recipe.Id, userId);
+        }
+
+        private static (decimal quantity, string unit) ParseQuantityAndUnit(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return (1m, "szt.");
+            input = input.Trim().Replace(',', '.');
+            var match = Regex.Match(input, @"^([0-9]+(?:\.[0-9]+)?)\s*(.*)$");
+
+            if (match.Success && decimal.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var qty))
+            {
+                var unit = match.Groups[2].Value.Trim();
+                return (qty, string.IsNullOrEmpty(unit) ? "szt." : unit);
+            }
+
+            return (1m, "szt.");
         }
     }
 }

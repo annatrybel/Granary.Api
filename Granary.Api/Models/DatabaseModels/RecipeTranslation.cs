@@ -24,9 +24,6 @@ namespace Granary.Api.Models.DatabaseModels
         [Required, MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        [MaxLength(500)]
-        public string? Description { get; set; }
-
         [Required]
         public string Instructions { get; set; } = string.Empty;
     }
