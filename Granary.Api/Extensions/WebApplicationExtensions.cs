@@ -86,13 +86,12 @@ public static class WebApplicationExtensions
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
-        app.UseStaticFiles();
+        //app.UseStaticFiles();  //gdy uzywasz wwwroot
 
         app.MapHealthChecks("/healthz");
         app.MapControllers();
 
-        //app.MapHub<ChatHub>("/chatHub");
-        //app.MapHub<NotificationHub>("/notificationHub");
+
 
         return app;
     }

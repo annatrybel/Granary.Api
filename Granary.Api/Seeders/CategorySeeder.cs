@@ -1,4 +1,5 @@
-﻿using Granary.Api.Models;
+﻿using System.Text.Json;
+using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,23 +16,24 @@ namespace Granary.Api.Seeders
 
         public async Task SeedAsync()
         {
-            if (await _context.Categories.AnyAsync())
+            if (await _context.Categories.AnyAsync()) return;
+
+            var jsonPath = Path.Combine(AppContext.BaseDirectory, "Seeders", "Data", "categories.json");
+            if (!File.Exists(jsonPath))
             {
-                return; 
+                jsonPath = Path.Combine(Directory.GetCurrentDirectory(), "Seeders", "Data", "categories.json");
             }
+            if (!File.Exists(jsonPath)) return;
 
-            var categories = new List<Category>
+            var jsonContent = await File.ReadAllTextAsync(jsonPath);
+            var categories = JsonSerializer.Deserialize<List<Category>>(jsonContent,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (categories != null && categories.Any())
             {
-                new() { Name = "Nabiał i Jaja", IconSlug = "dairy" },
-                new() { Name = "Pieczywo", IconSlug = "bakery" },
-                new() { Name = "Owoce i Warzywa", IconSlug = "veggies" },
-                new() { Name = "Mięso i Wędliny", IconSlug = "meat" },
-                new() { Name = "Mrożonki", IconSlug = "frozen" },
-                new() { Name = "Spiżarnia i Suche", IconSlug = "pantry" }
-            };
-
-            await _context.Categories.AddRangeAsync(categories);
-            await _context.SaveChangesAsync();
+                await _context.Categories.AddRangeAsync(categories);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

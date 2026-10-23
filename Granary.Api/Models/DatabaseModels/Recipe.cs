@@ -12,16 +12,11 @@ namespace Granary.Api.Models.DatabaseModels
         [Required, MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        [MaxLength(500)]
-        public string? Description { get; set; } 
-
-        [MaxLength(10)]
-        public string? Emoji { get; set; }
-
         public string? ImageUrl { get; set; }
 
         [Required]
         public string Instructions { get; set; } = string.Empty;
+        public int? Calories { get; set; }
 
         public int PrepTimeMinutes { get; set; }
         public int Servings { get; set; } = 1;
@@ -35,5 +30,6 @@ namespace Granary.Api.Models.DatabaseModels
 
         public ICollection<RecipeIngredient> Ingredients { get; set; } = new List<RecipeIngredient>();
         public ICollection<MealPlanRecipe> MealPlanRecipes { get; set; } = new List<MealPlanRecipe>();
+        public ICollection<RecipeTranslation> Translations { get; set; } = new List<RecipeTranslation>();
     }
 }

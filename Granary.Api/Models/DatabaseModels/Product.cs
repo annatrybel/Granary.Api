@@ -21,8 +21,7 @@ namespace Granary.Api.Models.DatabaseModels
         [MaxLength(50)]
         public string? Barcode { get; set; }
 
-        [MaxLength(10)]
-        public string? Emoji { get; set; }
+        public string? ImageUrl { get; set; }
 
         [Required, MaxLength(20)]
         public string DefaultUnit { get; set; } = "szt.";
@@ -38,5 +37,6 @@ namespace Granary.Api.Models.DatabaseModels
 
         public ICollection<PantryItem> PantryItems { get; set; } = new List<PantryItem>();
         public ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new List<RecipeIngredient>();
+        public ICollection<ProductTranslation> Translations { get; set; } = new List<ProductTranslation>();
     }
 }

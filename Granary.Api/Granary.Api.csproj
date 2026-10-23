@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -8,6 +8,13 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\Dto\Nowy folder\**" />
+    <Content Remove="Models\Dto\Nowy folder\**" />
+    <EmbeddedResource Remove="Models\Dto\Nowy folder\**" />
+    <None Remove="Models\Dto\Nowy folder\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DotNetEnv" Version="3.2.0" />
@@ -27,14 +34,20 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
     <PackageReference Include="NetEscapades.AspNetCore.SecurityHeaders" Version="1.3.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageReference Include="Sentry.AspNetCore" Version="6.8.0" />
+    <PackageReference Include="Supabase" Version="8.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.3" />
+    <PackageReference Include="WebPush" Version="1.0.13" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Migrations\" />
-    <Folder Include="Sentry\" />
   </ItemGroup>
+
+	<ItemGroup>
+	<None Update="Seeders\Data\*.json">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
+	</ItemGroup>
 
 </Project>

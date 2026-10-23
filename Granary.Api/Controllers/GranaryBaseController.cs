@@ -7,8 +7,6 @@ using System.Security.Claims;
 
 namespace Granary.Api.Controllers
 {
-    [ApiController]
-    [Authorize] 
     public abstract class GranaryBaseController : ControllerBase
     {
         protected GranaryBaseController() : base() { }

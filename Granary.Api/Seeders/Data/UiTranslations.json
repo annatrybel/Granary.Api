@@ -1,0 +1,961 @@
+[
+  {
+    "key": "common.back",
+    "value": "Wróć"
+  },
+  {
+    "key": "common.close",
+    "value": "Zamknij"
+  },
+  {
+    "key": "common.cancel",
+    "value": "Anuluj"
+  },
+  {
+    "key": "common.delete",
+    "value": "Usuń"
+  },
+  {
+    "key": "common.save",
+    "value": "Zapisz"
+  },
+  {
+    "key": "common.addToList",
+    "value": "Dodaj do listy"
+  },
+  {
+    "key": "common.min",
+    "value": "min"
+  },
+  {
+    "key": "common.days",
+    "value": "dni"
+  },
+  {
+    "key": "common.servingsSingular",
+    "value": "porcja"
+  },
+  {
+    "key": "common.servingsPlural",
+    "value": "porcje"
+  },
+  {
+    "key": "common.unitPcs",
+    "value": "szt."
+  },
+
+  {
+    "key": "media.removePhoto",
+    "value": "Usuń zdjęcie"
+  },
+  {
+    "key": "media.uploadPhoto",
+    "value": "lub wgraj własne zdjęcie z telefonu"
+  },
+  {
+    "key": "media.regenerateAi",
+    "value": "Wygeneruj ponownie AI"
+  },
+  {
+    "key": "media.generatingAi",
+    "value": "Generuję zdjęcie przez AI..."
+  },
+
+  {
+    "key": "nav.dashboard",
+    "value": "Pulpit"
+  },
+  {
+    "key": "nav.inventory",
+    "value": "Magazyn"
+  },
+  {
+    "key": "nav.recipes",
+    "value": "Przepisy"
+  },
+  {
+    "key": "nav.shopping",
+    "value": "Zakupy"
+  },
+
+  {
+    "key": "header.shopping",
+    "value": "Lista Zakupów"
+  },
+  {
+    "key": "header.scanner",
+    "value": "Skaner AI"
+  },
+  {
+    "key": "header.addManual",
+    "value": "Dodaj Produkt"
+  },
+  {
+    "key": "header.generateRecipe",
+    "value": "Generuj Przepis"
+  },
+
+  {
+    "key": "profile.title",
+    "value": "Ustawienia profilu"
+  },
+  {
+    "key": "profile.sectionPantry",
+    "value": "SPIŻARNIA I DOM"
+  },
+  {
+    "key": "profile.household",
+    "value": "Gospodarstwo domowe"
+  },
+  {
+    "key": "profile.connectedMembers",
+    "value": "osób połączonych"
+  },
+  {
+    "key": "profile.notifications",
+    "value": "Powiadomienia o ważności"
+  },
+  {
+    "key": "profile.diet",
+    "value": "Preferencje diety"
+  },
+  {
+    "key": "profile.sectionApp",
+    "value": "APLIKACJA"
+  },
+  {
+    "key": "profile.darkMode",
+    "value": "Ciemny motyw"
+  },
+  {
+    "key": "profile.language",
+    "value": "Język"
+  },
+  {
+    "key": "profile.units",
+    "value": "Jednostki miar"
+  },
+  {
+    "key": "profile.sectionHelp",
+    "value": "POMOC I KONTO"
+  },
+  {
+    "key": "profile.help",
+    "value": "Pomoc i FAQ"
+  },
+  {
+    "key": "profile.privacy",
+    "value": "Polityka prywatności"
+  },
+  {
+    "key": "profile.logout",
+    "value": "Wyloguj się"
+  },
+
+  {
+    "key": "recipes.scopeAll",
+    "value": "Wszystkie"
+  },
+  {
+    "key": "recipes.scopeFavorites",
+    "value": "Ulubione"
+  },
+  {
+    "key": "recipes.scopeCustom",
+    "value": "Moje przepisy"
+  },
+  {
+    "key": "recipes.addBannerTitle",
+    "value": "Dodaj własny przepis"
+  },
+  {
+    "key": "recipes.addBannerSubtitle",
+    "value": "Zapisz sprawdzoną recepturę w domowej bazie"
+  },
+  {
+    "key": "recipes.wandFilter",
+    "value": "Gotujesz z wybranych produktów z magazynu"
+  },
+  {
+    "key": "recipes.showAll",
+    "value": "Pokaż wszystkie ✕"
+  },
+  {
+    "key": "recipes.headerWand",
+    "value": "Dania z zaznaczonych produktów"
+  },
+  {
+    "key": "recipes.headerSearch",
+    "value": "Wyniki wyszukiwania"
+  },
+  {
+    "key": "recipes.headerFavorites",
+    "value": "Twoje ulubione dania"
+  },
+  {
+    "key": "recipes.headerCustom",
+    "value": "Przepisy z domowej bazy"
+  },
+  {
+    "key": "recipes.headerDefault",
+    "value": "Zrób z tego, co masz"
+  },
+  {
+    "key": "recipes.loading",
+    "value": "Łączenie z bazą danych i dopasowywanie przepisów..."
+  },
+  {
+    "key": "recipes.loadingMore",
+    "value": "Ładowanie kolejnych przepisów..."
+  },
+  {
+    "key": "recipes.emptyCustom",
+    "value": "Nie masz jeszcze własnych przepisów. Kliknij kafelek powyżej, aby dodać swój pierwszy przepis!"
+  },
+  {
+    "key": "recipes.emptyFavorites",
+    "value": "Nie masz jeszcze zapisanych ulubionych dań."
+  },
+  {
+    "key": "recipes.emptyDefault",
+    "value": "Brak dań spełniających wybrane kryteria."
+  },
+  {
+    "key": "recipes.modalBadge",
+    "value": "Inteligentna Spiżarnia"
+  },
+  {
+    "key": "recipes.modalTitle",
+    "value": "Uzupełnij brakujące składniki"
+  },
+  {
+    "key": "recipes.modalDescPart1",
+    "value": "Do przygotowania"
+  },
+  {
+    "key": "recipes.modalDescPart2",
+    "value": "brakuje Ci"
+  },
+  {
+    "key": "recipes.modalDescPart3",
+    "value": "pozycji. Czy chcesz przenieść je do listy zakupów?"
+  },
+  {
+    "key": "recipes.modalCancel",
+    "value": "Nie teraz"
+  },
+
+  {
+    "key": "recipes.searchPlaceholder",
+    "value": "Szukaj dania lub składnika..."
+  },
+  {
+    "key": "addRecipe.titleNew",
+    "value": "Nowy przepis"
+  },
+  {
+    "key": "addRecipe.titleEdit",
+    "value": "Edytuj przepis"
+  },
+  {
+    "key": "addRecipe.generateAiBtn",
+    "value": "Wygeneruj zdjęcie potrawy przez AI"
+  },
+  {
+    "key": "addRecipe.nameLabel",
+    "value": "Nazwa dania"
+  },
+  {
+    "key": "addRecipe.namePlaceholder",
+    "value": "np. Szarlotka z jabłkami i cynamonem"
+  },
+  {
+    "key": "addRecipe.servings",
+    "value": "Porcje"
+  },
+  {
+    "key": "addRecipe.time",
+    "value": "Czas"
+  },
+  {
+    "key": "addRecipe.categoryTitle",
+    "value": "Kategoria posiłku"
+  },
+  {
+    "key": "addRecipe.categorySubtitle",
+    "value": "Wybierz rodzaj dania"
+  },
+  {
+    "key": "addRecipe.ingredientsTitle",
+    "value": "Składniki"
+  },
+  {
+    "key": "addRecipe.ingredientsSubtitle",
+    "value": "Co będzie potrzebne?"
+  },
+  {
+    "key": "addRecipe.deleteIngredient",
+    "value": "Usuń składnik"
+  },
+  {
+    "key": "addRecipe.searchIngredientPlaceholder",
+    "value": "Wyszukaj kolejny składnik..."
+  },
+  {
+    "key": "addRecipe.stepsTitle",
+    "value": "Kroki przygotowania"
+  },
+  {
+    "key": "addRecipe.stepsSubtitle",
+    "value": "Instrukcja gotowania"
+  },
+  {
+    "key": "addRecipe.stepPlaceholder",
+    "value": "Opisz ten krok przygotowania..."
+  },
+  {
+    "key": "addRecipe.deleteStep",
+    "value": "Usuń krok"
+  },
+  {
+    "key": "addRecipe.addStep",
+    "value": "Dodaj kolejny krok"
+  },
+  {
+    "key": "addRecipe.deleteIngredientContext",
+    "value": "z tego przepisu"
+  },
+
+  {
+    "key": "recipeCard.saveFavorite",
+    "value": "Zapisz w ulubionych"
+  },
+  {
+    "key": "recipeCard.editRecipe",
+    "value": "Edytuj przepis"
+  },
+  {
+    "key": "recipeCard.deleteRecipe",
+    "value": "Usuń przepis"
+  },
+  {
+    "key": "recipeCard.missingPrefix",
+    "value": "Brakuje:"
+  },
+  {
+    "key": "recipeCard.addMissingTooltip",
+    "value": "Dodaj brakujące do listy zakupów"
+  },
+
+  {
+    "key": "recipeDetail.likeTooltip",
+    "value": "Polub przepis"
+  },
+  {
+    "key": "recipeDetail.ingredients",
+    "value": "Składniki"
+  },
+  {
+    "key": "recipeDetail.itemsCount",
+    "value": "pozycji"
+  },
+  {
+    "key": "recipeDetail.owned",
+    "value": "W magazynie"
+  },
+  {
+    "key": "recipeDetail.missing",
+    "value": "Brakuje"
+  },
+  {
+    "key": "recipeDetail.loadingIngredients",
+    "value": "Wczytywanie listy składników..."
+  },
+  {
+    "key": "recipeDetail.instructions",
+    "value": "Sposób przygotowania"
+  },
+  {
+    "key": "recipeDetail.loadingInstructions",
+    "value": "Wczytywanie instrukcji..."
+  },
+  {
+    "key": "recipeDetail.cookBtn",
+    "value": "Ugotowane! Odlicz z magazynu"
+  },
+
+  {
+    "key": "recipeFilters.title",
+    "value": "Filtry i sortowanie"
+  },
+  {
+    "key": "recipeFilters.sortBy",
+    "value": "Sortuj według"
+  },
+  {
+    "key": "recipeFilters.sortMatch",
+    "value": "Dopasowanie spiżarni"
+  },
+  {
+    "key": "recipeFilters.sortTime",
+    "value": "Najkrótszy czas"
+  },
+  {
+    "key": "recipeFilters.sortCalories",
+    "value": "Najmniej kalorii"
+  },
+  {
+    "key": "recipeFilters.sortRating",
+    "value": "Ocena użytkowników"
+  },
+  {
+    "key": "recipeFilters.maxTime",
+    "value": "Maksymalny czas"
+  },
+  {
+    "key": "recipeFilters.time15",
+    "value": "do 15 min"
+  },
+  {
+    "key": "recipeFilters.time30",
+    "value": "do 30 min"
+  },
+  {
+    "key": "recipeFilters.time45",
+    "value": "do 45 min"
+  },
+  {
+    "key": "recipeFilters.timeAny",
+    "value": "Dowolny"
+  },
+  {
+    "key": "recipeFilters.mealType",
+    "value": "Posiłek"
+  },
+  {
+    "key": "recipeFilters.diets",
+    "value": "Preferencje i diety"
+  },
+  {
+    "key": "recipeFilters.reset",
+    "value": "Wyczyść filtry"
+  },
+  {
+    "key": "recipeFilters.apply",
+    "value": "Pokaż przepisy"
+  },
+  {
+    "key": "recipeFilters.buttonTooltip",
+    "value": "Filtry"
+  },
+
+  {
+    "key": "inventory.scanBarcode",
+    "value": "Skanuj kod kreskowy"
+  },
+  {
+    "key": "inventory.locAll",
+    "value": "Wszystko"
+  },
+  {
+    "key": "inventory.locFridge",
+    "value": "Lodówka"
+  },
+  {
+    "key": "inventory.locFreezer",
+    "value": "Zamrażarka"
+  },
+  {
+    "key": "inventory.locPantry",
+    "value": "Spiżarnia"
+  },
+  {
+    "key": "inventory.empty",
+    "value": "Brak produktów w wybranej lokalizacji."
+  },
+  {
+    "key": "inventory.deleteContext",
+    "value": "ze spiżarni"
+  },
+
+  {
+    "key": "dashboard.greeting",
+    "value": "Witaj z powrotem,"
+  },
+  {
+    "key": "dashboard.title",
+    "value": "Podsumowanie Twojej kuchni"
+  },
+  {
+    "key": "dashboard.expiringLabel",
+    "value": "Warto zużyć najpierw"
+  },
+  {
+    "key": "dashboard.expiringCount",
+    "value": "produkty"
+  },
+  {
+    "key": "dashboard.allFreshTitle",
+    "value": "Wszystko świeże! 🎉"
+  },
+  {
+    "key": "dashboard.allFreshDesc",
+    "value": "Żaden produkt nie wygasa w najbliższym czasie."
+  },
+  {
+    "key": "dashboard.stockTitle",
+    "value": "Stan zapasów"
+  },
+  {
+    "key": "dashboard.cookTitle",
+    "value": "Gotuj z wygasających produktów"
+  },
+  {
+    "key": "dashboard.cookSubtitle",
+    "value": "Pomysły na wykorzystanie zapasów z lodówki"
+  },
+  {
+    "key": "dashboard.seeMore",
+    "value": "Zobacz więcej"
+  },
+  {
+    "key": "dashboard.badgeFullPantry",
+    "value": "100% z magazynu"
+  },
+  {
+    "key": "dashboard.badgeSaves",
+    "value": "Ratuje"
+  },
+  {
+    "key": "dashboard.badgeItemSingular",
+    "value": "produkt"
+  },
+  {
+    "key": "dashboard.badgeItemPlural",
+    "value": "produkty"
+  },
+  {
+    "key": "dashboard.badgeFromPantry",
+    "value": "% ze spiżarni"
+  },
+
+  {
+    "key": "auth.title",
+    "value": "Witaj w Smart Pantry"
+  },
+  {
+    "key": "auth.subtitle",
+    "value": "Twoja domowa spiżarnia i kuchnia w pełnej harmonii"
+  },
+  {
+    "key": "auth.tabLogin",
+    "value": "Zaloguj się"
+  },
+  {
+    "key": "auth.tabRegister",
+    "value": "Utwórz konto"
+  },
+  {
+    "key": "auth.nameLabel",
+    "value": "Twoje imię"
+  },
+  {
+    "key": "auth.emailLabel",
+    "value": "Adres e-mail"
+  },
+  {
+    "key": "auth.passwordLabel",
+    "value": "Hasło"
+  },
+  {
+    "key": "auth.passwordPlaceholder",
+    "value": "Wpisz swoje hasło"
+  },
+  {
+    "key": "auth.rememberMe",
+    "value": "Zapamiętaj mnie"
+  },
+  {
+    "key": "auth.forgotPassword",
+    "value": "Nie pamiętasz hasła?"
+  },
+  {
+    "key": "auth.btnLoginSubmit",
+    "value": "Zaloguj się do spiżarni"
+  },
+  {
+    "key": "auth.btnRegisterSubmit",
+    "value": "Utwórz konto w spiżarni"
+  },
+  {
+    "key": "auth.processing",
+    "value": "Przetwarzanie..."
+  },
+  {
+    "key": "auth.orContinueWith",
+    "value": "lub kontynuuj przez"
+  },
+  {
+    "key": "auth.google",
+    "value": "Kontynuuj z kontem Google"
+  },
+  {
+    "key": "auth.footerText",
+    "value": "Logując się, zyskujesz bezpieczny dostęp do swojego konta domowego. Przeczytaj naszą"
+  },
+  {
+    "key": "auth.privacyPolicy",
+    "value": "Politykę prywatności"
+  },
+
+  {
+    "key": "shopping.newListBtn",
+    "value": "Nowa lista"
+  },
+  {
+    "key": "shopping.itemsToBuy",
+    "value": "Artykuły do kupienia"
+  },
+  {
+    "key": "shopping.itemsCountSuffix",
+    "value": "pozycje"
+  },
+  {
+    "key": "shopping.moreOptionsTitle",
+    "value": "Więcej opcji"
+  },
+  {
+    "key": "shopping.shareTitle",
+    "value": "Wyślij listę"
+  },
+  {
+    "key": "shopping.shareDesc",
+    "value": "SMS lub WhatsApp"
+  },
+  {
+    "key": "shopping.clearBoughtTitle",
+    "value": "Wyczyść kupione"
+  },
+  {
+    "key": "shopping.clearBoughtDesc",
+    "value": "Usuń odznaczone z listy"
+  },
+  {
+    "key": "shopping.deleteListTitle",
+    "value": "Usuń tę listę"
+  },
+  {
+    "key": "shopping.deleteListDesc",
+    "value": "Skasuj całą listę"
+  },
+  {
+    "key": "shopping.loading",
+    "value": "Wczytywanie listy zakupów..."
+  },
+  {
+    "key": "shopping.empty",
+    "value": "Twoja lista zakupów jest pusta. Wpisz produkt u góry lub dodaj z sugerowanych!"
+  },
+  {
+    "key": "shopping.checkoutBtn",
+    "value": "Schowaj zakupy do magazynu"
+  },
+  {
+    "key": "shopping.checkoutHint",
+    "value": "Produkty automatycznie trafią na właściwe półki w Twoim magazynie."
+  },
+  {
+    "key": "shopping.modalNewTitle",
+    "value": "Nowa lista zakupów"
+  },
+  {
+    "key": "shopping.modalNewDesc",
+    "value": "Wpisz nazwę nowej listy, np. Biedronka, Grill, Impreza."
+  },
+  {
+    "key": "shopping.modalNewPlaceholder",
+    "value": "np. Tygodniowe zakupy"
+  },
+  {
+    "key": "shopping.modalCreate",
+    "value": "Stwórz i otwórz"
+  },
+  {
+    "key": "shopping.deleteContext",
+    "value": "z listy zakupów"
+  },
+
+  {
+    "key": "suggestions.title",
+    "value": "Sugerowane do uzupełnienia"
+  },
+  {
+    "key": "itemCard.deleteTitle",
+    "value": "Usuń pozycję"
+  },
+
+  {
+    "key": "search.searching",
+    "value": "Przeszukuję katalog..."
+  },
+  {
+    "key": "search.suggestionsHeader",
+    "value": "Podpowiedzi z bazy produktów:"
+  },
+  {
+    "key": "search.addBadge",
+    "value": "+ Dodaj"
+  },
+  {
+    "key": "search.notFoundTitle",
+    "value": "Nie znaleziono w katalogu"
+  },
+  {
+    "key": "search.notFoundPrompt",
+    "value": "Dodać"
+  },
+  {
+    "key": "search.clearTitle",
+    "value": "Wyczyść"
+  },
+  {
+    "key": "search.defaultPlaceholder",
+    "value": "Szukaj lub dodaj produkt..."
+  },
+
+  {
+    "key": "confirmModal.title",
+    "value": "Usunąć produkt?"
+  },
+  {
+    "key": "confirmModal.descPrefix",
+    "value": "Czy na pewno chcesz usunąć"
+  },
+
+  {
+    "key": "category.lunch",
+    "value": "Obiad"
+  },
+  {
+    "key": "category.breakfast",
+    "value": "Śniadanie"
+  },
+  {
+    "key": "category.dinner",
+    "value": "Kolacja"
+  },
+  {
+    "key": "category.baking",
+    "value": "Wypieki i ciasta"
+  },
+  {
+    "key": "category.snack",
+    "value": "Przekąska"
+  },
+  {
+    "key": "category.other",
+    "value": "Inne"
+  },
+
+  {
+    "key": "diet.glutenFree",
+    "value": "Bez glutenu"
+  },
+  {
+    "key": "diet.lactoseFree",
+    "value": "Bez laktozy"
+  },
+  {
+    "key": "diet.vegan",
+    "value": "Wegańskie"
+  },
+  {
+    "key": "diet.vegetarian",
+    "value": "Wegetariańskie"
+  },
+
+  {
+    "key": "inventoryCard.deleteTooltip",
+    "value": "Usuń ze spiżarni"
+  },
+  {
+    "key": "inventoryBar.selectedProducts",
+    "value": "Wybrane produkty"
+  },
+  {
+    "key": "inventoryBar.generateRecipe",
+    "value": "Generuj przepis"
+  },
+
+  {
+    "key": "productDetail.title",
+    "value": "Szczegóły produktu"
+  },
+  {
+    "key": "productDetail.locationPrefix",
+    "value": "Lokalizacja:"
+  },
+  {
+    "key": "productDetail.storageLocation",
+    "value": "Miejsce przechowywania"
+  },
+  {
+    "key": "productDetail.category",
+    "value": "Kategoria produktu"
+  },
+  {
+    "key": "productDetail.quantity",
+    "value": "Ilość"
+  },
+  {
+    "key": "productDetail.decreaseQty",
+    "value": "Zmniejsz ilość"
+  },
+  {
+    "key": "productDetail.increaseQty",
+    "value": "Zwiększ ilość"
+  },
+  {
+    "key": "productDetail.expiryDate",
+    "value": "Data ważności"
+  },
+  {
+    "key": "productDetail.plus3Days",
+    "value": "+3 dni"
+  },
+  {
+    "key": "productDetail.plus7Days",
+    "value": "+7 dni"
+  },
+  {
+    "key": "productDetail.plus2Weeks",
+    "value": "+2 tyg"
+  },
+  {
+    "key": "productDetail.generateAiBtn",
+    "value": "Wygeneruj zdjęcie produktu przez AI"
+  },
+
+  {
+    "key": "units.liter",
+    "value": "litr (L)"
+  },
+  {
+    "key": "units.kg",
+    "value": "kg"
+  },
+  {
+    "key": "units.gram",
+    "value": "gram (g)"
+  },
+  {
+    "key": "units.package",
+    "value": "opakowanie"
+  },
+
+  {
+    "key": "householdInvite.title",
+    "value": "Zaproś do spiżarni"
+  },
+  {
+    "key": "householdInvite.subtitle",
+    "value": "Wspólnie zarządzajcie produktami i listą zakupów"
+  },
+  {
+    "key": "householdInvite.linkTitle",
+    "value": "Link zaproszenia"
+  },
+  {
+    "key": "householdInvite.copyBtn",
+    "value": "Kopiuj"
+  },
+  {
+    "key": "householdInvite.copiedBtn",
+    "value": "Skopiowano"
+  },
+  {
+    "key": "householdInvite.linkDesc",
+    "value": "Każdy, kto otworzy link, zyska natychmiastowy dostęp do Twoich zapasów."
+  },
+  {
+    "key": "householdInvite.qrScanPrompt",
+    "value": "Lub daj zeskanować kod QR drugim telefonem"
+  },
+  {
+    "key": "householdInvite.qrAlt",
+    "value": "Kod QR zaproszenia"
+  },
+  {
+    "key": "householdInvite.currentMembers",
+    "value": "AKTUALNI CZŁONKOWIE"
+  },
+  {
+    "key": "householdInvite.synced",
+    "value": "Zsynchronizowano"
+  },
+  {
+    "key": "householdInvite.roleOwner",
+    "value": "Ty (Właściciel)"
+  },
+  {
+    "key": "householdInvite.removeMemberTooltip",
+    "value": "Usuń ze spiżarni"
+  },
+  {
+    "key": "householdInvite.shareBtn",
+    "value": "Udostępnij przez inne aplikacje..."
+  },
+  {
+    "key": "householdInvite.deleteContext",
+    "value": "z gospodarstwa domowego"
+  },
+  {
+    "key": "householdInvite.shareTitle",
+    "value": "Dołącz do mojej spiżarni w Smart Pantry"
+  },
+  {
+    "key": "householdInvite.shareText",
+    "value": "Wspólnie zarządzajmy domowymi zapasami i listą zakupów!"
+  },
+
+  {
+    "key": "forgotPassword.title",
+    "value": "Zresetuj hasło"
+  },
+  {
+    "key": "forgotPassword.desc",
+    "value": "Podaj adres e-mail powiązany z Twoim kontem. Wyślemy Ci bezpieczny link do zmiany hasła."
+  },
+  {
+    "key": "forgotPassword.successMsg",
+    "value": "Link resetujący został wysłany! Sprawdź swoją skrzynkę pocztową."
+  },
+  {
+    "key": "forgotPassword.backToLogin",
+    "value": "Wróć do logowania"
+  },
+  {
+    "key": "forgotPassword.emailLabel",
+    "value": "Twój adres e-mail"
+  },
+  {
+    "key": "forgotPassword.emailPlaceholder",
+    "value": "np. anna.kowalska@email.com"
+  },
+  {
+    "key": "forgotPassword.submitBtn",
+    "value": "Wyślij link resetujący"
+  },
+  {
+    "key": "forgotPassword.sending",
+    "value": "Wysyłanie..."
+  },
+  {
+    "key": "forgotPassword.infoNotice",
+    "value": "Wiadomość dotrze w ciągu 2 minut. Link jest bezpieczny i ważny przez 60 minut. Jeśli nie widzisz e-maila, sprawdź folder Spam."
+  },
+  {
+    "key": "forgotPassword.defaultError",
+    "value": "Nie udało się wysłać linku. Spróbuj ponownie."
+  }
+]

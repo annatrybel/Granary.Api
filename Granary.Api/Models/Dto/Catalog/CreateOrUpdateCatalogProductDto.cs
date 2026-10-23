@@ -11,8 +11,7 @@ namespace Granary.Api.Models.Dto
         [StringLength(50, ErrorMessage = "Kod kreskowy nie może przekraczać 50 znaków.")]
         public string? Barcode { get; set; }
 
-        [StringLength(10, ErrorMessage = "Emoji nie może przekraczać 10 znaków.")]
-        public string? Emoji { get; set; }
+        public string? ImageUrl { get; set; }
 
         [StringLength(20, ErrorMessage = "Jednostka miary nie może przekraczać 20 znaków.")]
         public string? DefaultUnit { get; set; } = "szt.";

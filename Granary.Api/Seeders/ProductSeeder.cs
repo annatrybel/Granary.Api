@@ -1,4 +1,5 @@
-﻿using Granary.Api.Models;
+﻿using System.Text.Json;
+using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,49 +8,118 @@ namespace Granary.Api.Seeders
     public class ProductSeeder
     {
         private readonly GranaryDbContext _context;
+        private readonly ILogger<ProductSeeder> _logger;
 
-        public ProductSeeder(GranaryDbContext context)
+        public ProductSeeder(GranaryDbContext context, ILogger<ProductSeeder> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task SeedAsync()
         {
-            if (await _context.Products.AnyAsync())
+            var categories = await _context.Categories.ToListAsync();
+            if (!categories.Any())
+            {
+                _logger.LogWarning("Brak kategorii w bazie. Najpierw uruchom CategorySeeder!");
+                return;
+            }
+
+            var categoryMap = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+
+            var defaultCategoryId = categories.First().Id;
+
+            var jsonPath = Path.Combine(AppContext.BaseDirectory, "Seeders", "Data", "products.json");
+            if (!File.Exists(jsonPath))
+            {
+                jsonPath = Path.Combine(Directory.GetCurrentDirectory(), "Seeders", "Data", "products.json");
+            }
+
+            if (!File.Exists(jsonPath))
+            {
+                _logger.LogWarning("Nie znaleziono pliku products.json pod ścieżką: {Path}", jsonPath);
+                return;
+            }
+
+            var jsonContent = await File.ReadAllTextAsync(jsonPath);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var productSeedList = JsonSerializer.Deserialize<List<ProductJsonModel>>(jsonContent, options);
+
+            if (productSeedList == null || !productSeedList.Any())
             {
                 return;
             }
 
-            var categories = await _context.Categories
-                .Where(c => c.IconSlug != null)
-                .ToDictionaryAsync(c => c.IconSlug!, c => c.Id);
+            var existingProducts = await _context.Products.ToListAsync();
+            var existingMap = existingProducts.ToDictionary(p => p.Name.ToLower().Trim(), p => p);
 
-            if (!categories.Any())
+            var toAdd = new List<Product>();
+            int updatedCount = 0;
+
+            foreach (var item in productSeedList)
             {
-                return; 
+                var normalizedName = item.Name.ToLower().Trim();
+
+                var catId = defaultCategoryId;
+                if (!string.IsNullOrEmpty(item.CategorySlug) && categoryMap.TryGetValue(item.CategorySlug, out var foundCatId))
+                {
+                    catId = foundCatId;
+                }
+
+                if (existingMap.TryGetValue(normalizedName, out var existingProduct))
+                {
+                    bool wasModified = false;
+
+                    if (string.IsNullOrEmpty(existingProduct.ImageUrl) && !string.IsNullOrEmpty(item.ImageUrl))
+                    {
+                        existingProduct.ImageUrl = item.ImageUrl;
+                        wasModified = true;
+                    }
+
+                    if (string.IsNullOrEmpty(existingProduct.Barcode) && !string.IsNullOrEmpty(item.Barcode))
+                    {
+                        existingProduct.Barcode = item.Barcode;
+                        wasModified = true;
+                    }
+
+                    if (wasModified) updatedCount++;
+                }
+                else
+                {
+                    toAdd.Add(new Product
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = item.Name.Trim(),
+                        CategoryId = catId,
+                        ImageUrl = item.ImageUrl,
+                        DefaultUnit = item.DefaultUnit ?? "szt.",
+                        DefaultShelfLifeDays = item.DefaultShelfLifeDays > 0 ? item.DefaultShelfLifeDays : 7,
+                        Barcode = item.Barcode
+                    });
+                }
             }
 
-            var products = new List<Product>
+            if (toAdd.Any())
             {
-                new() { CategoryId = categories["dairy"], Name = "Mleko 3.2%", Emoji = "🥛", DefaultUnit = "L", DefaultShelfLifeDays = 7, Barcode = "5900820000018" },
-                new() { CategoryId = categories["dairy"], Name = "Jajka (M/L)", Emoji = "🥚", DefaultUnit = "pcs", DefaultShelfLifeDays = 21 },
-                new() { CategoryId = categories["dairy"], Name = "Ser Żółty", Emoji = "🧀", DefaultUnit = "g", DefaultShelfLifeDays = 14 },
-                new() { CategoryId = categories["dairy"], Name = "Masło Extra", Emoji = "🧈", DefaultUnit = "pcs", DefaultShelfLifeDays = 30 },
+                await _context.Products.AddRangeAsync(toAdd);
+            }
 
-                new() { CategoryId = categories["bakery"], Name = "Chleb Pszenno-Żytni", Emoji = "🍞", DefaultUnit = "pcs", DefaultShelfLifeDays = 3 },
-                new() { CategoryId = categories["bakery"], Name = "Bułka Kajzerka", Emoji = "🥖", DefaultUnit = "pcs", DefaultShelfLifeDays = 1 },
+            if (toAdd.Any() || updatedCount > 0)
+            {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("ProductSeeder: Dodano {Added} nowych produktów, zaktualizowano {Updated} istniejących.",
+                    toAdd.Count, updatedCount);
+            }
+        }
 
-                new() { CategoryId = categories["veggies"], Name = "Jabłka", Emoji = "🍎", DefaultUnit = "kg", DefaultShelfLifeDays = 14 },
-                new() { CategoryId = categories["veggies"], Name = "Pomidory", Emoji = "🍅", DefaultUnit = "kg", DefaultShelfLifeDays = 5 },
-
-                new() { CategoryId = categories["frozen"], Name = "Pizza Mrożona", Emoji = "🍕", DefaultUnit = "pcs", DefaultShelfLifeDays = 180 },
-
-                new() { CategoryId = categories["pantry"], Name = "Mąka Pszenna", Emoji = "🌾", DefaultUnit = "kg", DefaultShelfLifeDays = 365 },
-                new() { CategoryId = categories["pantry"], Name = "Olej Rzepakowy", Emoji = "🍾", DefaultUnit = "L", DefaultShelfLifeDays = 180 }
-            };
-
-            await _context.Products.AddRangeAsync(products);
-            await _context.SaveChangesAsync();
+        private class ProductJsonModel
+        {
+            public string Name { get; set; } = string.Empty;
+            public string? CategorySlug { get; set; }
+            public string? ImageUrl { get; set; }
+            public string? DefaultUnit { get; set; }
+            public int DefaultShelfLifeDays { get; set; }
+            public string? Barcode { get; set; }
         }
     }
 }

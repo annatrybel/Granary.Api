@@ -18,18 +18,18 @@ namespace Granary.Api.Controllers.Mobile
         #region Listy Zakupów
 
         [HttpGet]
-        public async Task<IActionResult> GetMyLists()
+        public async Task<IActionResult> GetMyLists([FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
-            var result = await _shoppingService.GetUserListsAsync(userId);
+            var result = await _shoppingService.GetUserListsAsync(userId, lang);
             return HandleServiceResult(result);
         }
 
         [HttpGet("{listId}")]
-        public async Task<IActionResult> GetListDetails(Guid listId)
+        public async Task<IActionResult> GetListDetails(Guid listId, [FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
-            var result = await _shoppingService.GetListDetailsAsync(userId, listId);
+            var result = await _shoppingService.GetListDetailsAsync(userId, listId, lang);
             return HandleServiceResult(result);
         }
 
@@ -54,18 +54,18 @@ namespace Granary.Api.Controllers.Mobile
         #region Pozycje na Liście
 
         [HttpPost("{listId}/items")]
-        public async Task<IActionResult> AddItem(Guid listId, [FromBody] AddShoppingItemDto dto)
+        public async Task<IActionResult> AddItem(Guid listId, [FromBody] AddShoppingItemDto dto, [FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
-            var result = await _shoppingService.AddItemAsync(userId, listId, dto);
+            var result = await _shoppingService.AddItemAsync(userId, listId, dto, lang);
             return HandleServiceResult(result, customStatusCode: StatusCodes.Status201Created);
         }
 
         [HttpPost("{listId}/items/from-pantry/{pantryItemId}")]
-        public async Task<IActionResult> AddFromPantry(Guid listId, Guid pantryItemId)
+        public async Task<IActionResult> AddFromPantry(Guid listId, Guid pantryItemId, [FromQuery] string lang = "pl")
         {
             var userId = GetCurrentUserId();
-            var result = await _shoppingService.AddFromPantryItemAsync(userId, listId, pantryItemId);
+            var result = await _shoppingService.AddFromPantryItemAsync(userId, listId, pantryItemId, lang);
             return HandleServiceResult(result);
         }
 
@@ -77,9 +77,6 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
-        /// <summary>
-        /// Usuwa zaznaczone produkty z listy
-        /// </summary>
         [HttpPost("{listId}/items/bulk-delete")]
         public async Task<IActionResult> DeleteSelectedItems(Guid listId, [FromBody] List<Guid> itemIds)
         {
@@ -88,9 +85,6 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
-        /// <summary>
-        /// Przenosi zaznaczone produkty do spiżarni (Lodówka / Zamrażarka / Spiżarnia)
-        /// </summary>
         [HttpPost("{listId}/items/bulk-transfer")]
         public async Task<IActionResult> BulkTransfer(Guid listId, [FromBody] BulkTransferToPantryDto dto)
         {
