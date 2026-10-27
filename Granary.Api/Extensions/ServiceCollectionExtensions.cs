@@ -20,6 +20,13 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
+        services.ConfigureExternalCookie(options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.HttpOnly = true;
+        });
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -34,9 +41,8 @@ public static class ServiceCollectionExtensions
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-
-                ValidIssuer = configuration["JWT:Issuer"],
-                ValidAudience = configuration["JWT:Audience"],
+                ValidIssuer = configuration["JWT__Issuer"],
+                ValidAudience = configuration["JWT__Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"] ?? string.Empty))
             };
             options.Events = new JwtBearerEvents
@@ -58,6 +64,20 @@ public static class ServiceCollectionExtensions
         {
             options.ClientId = configuration["GOOGLE_CLIENT_ID"] ?? string.Empty;
             options.ClientSecret = configuration["GOOGLE_CLIENT_SECRET"] ?? string.Empty;
+
+            options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.CorrelationCookie.HttpOnly = true;
+            options.CorrelationCookie.IsEssential = true;
+
+            options.Events.OnRemoteFailure = context =>
+            {
+                var frontendUrl = configuration["FRONTEND_BASE_URL"] ?? "https://granarymobile-user-app.vercel.app";
+                var error = context.Failure?.Message ?? "Błąd logowania przez Google";
+                context.Response.Redirect($"{frontendUrl}/login?error={Uri.EscapeDataString(error)}");
+                context.HandleResponse();
+                return Task.CompletedTask;
+            };
         });
 
         return services;
