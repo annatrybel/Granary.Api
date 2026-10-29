@@ -32,9 +32,7 @@ namespace Granary.Api.Controllers.Mobile
             [FromQuery] bool excludePantry = false,
             [FromQuery] string lang = "pl")
         {
-            var userId = GetCurrentUserId();
-
-            var result = await _catalogService.SearchAsync(query, categoryId, userId, excludePantry, lang);
+            var result = await _catalogService.SearchAsync(query, categoryId, excludePantry, lang);
             return HandleServiceResult(result);
         }
 
@@ -82,10 +80,7 @@ namespace Granary.Api.Controllers.Mobile
                 return BadRequest("Nazwa produktu jest wymagana.");
             }
 
-            var userId = GetCurrentUserId();
-
             var productId = await _catalogService.GetOrCreateCustomProductAsync(
-                userId: userId,
                 name: dto.Name,
                 categoryId: dto.CategoryId != Guid.Empty ? dto.CategoryId : null,
                 unit: dto.DefaultUnit,

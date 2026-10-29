@@ -16,23 +16,27 @@ namespace Granary.Api.Services
         private readonly IEmailService _emailService;
         private readonly ILogger<ProfileService> _logger;
         private readonly GranaryDbContext _dbContext;
+        private readonly ICurrentUserService _currentUserService;
 
         public ProfileService(
             UserManager<ApplicationUser> userManager,
             IFileStorageService fileStorageService,
             IEmailService emailService,
             ILogger<ProfileService> logger,
-            GranaryDbContext dbContext)
+            GranaryDbContext dbContext,
+            ICurrentUserService currentUserService)
         {
             _userManager = userManager;
             _fileStorageService = fileStorageService;
             _emailService = emailService;
             _logger = logger;
             _dbContext = dbContext;
+            _currentUserService = currentUserService;
         }
 
-        public async Task<ServiceResult<UserProfileDto>> GetProfileAsync(Guid userId)
+        public async Task<ServiceResult<UserProfileDto>> GetProfileAsync()
         {
+            var userId = _currentUserService.UserId;
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
@@ -52,8 +56,9 @@ namespace Granary.Api.Services
             return ServiceResult<UserProfileDto>.Success(dto);
         }
 
-        public async Task<ServiceResult<UpdateProfileResponseDto>> UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
+        public async Task<ServiceResult<UpdateProfileResponseDto>> UpdateProfileAsync(UpdateProfileDto dto)
         {
+            var userId = _currentUserService.UserId;
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
@@ -92,8 +97,9 @@ namespace Granary.Api.Services
             return ServiceResult<UpdateProfileResponseDto>.Success(new UpdateProfileResponseDto(user.AvatarUrl, user.UserName));
         }
 
-        public async Task<ServiceResult<bool>> UpdateDarkModeAsync(Guid userId, bool darkMode)
+        public async Task<ServiceResult<bool>> UpdateDarkModeAsync(bool darkMode)
         {
+            var userId = _currentUserService.UserId;
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null) return ServiceResult<bool>.Failure("Użytkownik nie istnieje.");
 
@@ -108,8 +114,9 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<bool>> UpdateLanguageAsync(Guid userId, string language)
+        public async Task<ServiceResult<bool>> UpdateLanguageAsync(string language)
         {
+            var userId = _currentUserService.UserId;
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null) return ServiceResult<bool>.Failure("Użytkownik nie istnieje.");
 
@@ -124,8 +131,9 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<bool>> SendInvitationAsync(Guid userId, SendInvitationRequestDto dto, string hostUrl)
+        public async Task<ServiceResult<bool>> SendInvitationAsync(SendInvitationRequestDto dto, string hostUrl)
         {
+            var userId = _currentUserService.UserId;
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null) return ServiceResult<bool>.Failure("Użytkownik nie istnieje.");
 
@@ -152,8 +160,9 @@ namespace Granary.Api.Services
         }
 
 
-        public async Task<ServiceResult<bool>> UpdateExpiryNotificationsAsync(Guid userId, bool enabled)
+        public async Task<ServiceResult<bool>> UpdateExpiryNotificationsAsync(bool enabled)
         {
+            var userId = _currentUserService.UserId;
             var user = await _dbContext.Users.FindAsync(userId);
             if (user == null)
                 return ServiceResult<bool>.Failure("Nie znaleziono profilu użytkownika.");
@@ -164,8 +173,9 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<List<NotificationDto>>> GetNotificationsAsync(Guid userId, bool onlyUnread)
+        public async Task<ServiceResult<List<NotificationDto>>> GetNotificationsAsync(bool onlyUnread)
         {
+            var userId = _currentUserService.UserId;
             var query = _dbContext.Notifications
                 .AsNoTracking()
                 .Where(n => n.UserId == userId);
@@ -191,8 +201,9 @@ namespace Granary.Api.Services
             return ServiceResult<List<NotificationDto>>.Success(list);
         }
 
-        public async Task<ServiceResult<bool>> MarkNotificationAsReadAsync(Guid userId, Guid notificationId)
+        public async Task<ServiceResult<bool>> MarkNotificationAsReadAsync(Guid notificationId)
         {
+            var userId = _currentUserService.UserId;
             var notification = await _dbContext.Notifications
                 .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
 

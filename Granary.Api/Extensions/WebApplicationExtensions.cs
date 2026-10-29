@@ -39,7 +39,7 @@ public static class WebApplicationExtensions
         app.UseForwardedHeaders(forwardedHeadersOptions);
 
         var policyCollection = new HeaderPolicyCollection()
-            .AddDefaultSecurityHeaders()
+            .AddDefaultApiSecurityHeaders()
             .AddContentSecurityPolicy(csp =>
             {
                 csp.AddDefaultSrc().Self();

@@ -3,6 +3,7 @@ using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Catalog;
 using Granary.Api.Models.Enums;
+using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +15,16 @@ namespace Granary.Api.Services.Catalog
     {
         private readonly GranaryDbContext _dbContext;
         private readonly ILogger<CatalogProductService> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public CatalogProductService(GranaryDbContext dbContext, ILogger<CatalogProductService> logger)
+        public CatalogProductService(
+            GranaryDbContext dbContext,
+            ILogger<CatalogProductService> logger,
+            ICurrentUserService currentUserService)
         {
             _dbContext = dbContext;
             _logger = logger;
+            _currentUserService = currentUserService;
         }
 
         private static Expression<Func<Product, CatalogProductDto>> CreateDtoSelector(Guid targetLangId) => p => new CatalogProductDto
@@ -37,10 +43,10 @@ namespace Granary.Api.Services.Catalog
         public async Task<ServiceResult<IEnumerable<CatalogProductDto>>> SearchAsync(
             string? query,
             Guid? categoryId,
-            Guid? currentUserId = null,
             bool excludePantry = false,
             string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var normalizedLang = (lang ?? "pl").Trim().ToLower();
 
             var targetLang = await _dbContext.Languages
@@ -55,24 +61,17 @@ namespace Granary.Api.Services.Catalog
                     .ThenInclude(c => c.Translations)
                 .AsQueryable();
 
-            if (currentUserId.HasValue)
-            {
-                dbQuery = dbQuery.Where(p => p.CreatedByUserId == null || p.CreatedByUserId == currentUserId.Value);
+            dbQuery = dbQuery.Where(p => p.CreatedByUserId == null || p.CreatedByUserId == userId);
 
-                if (excludePantry)
-                {
-                    var userActiveProductIds = await _dbContext.PantryItems
-                        .AsNoTracking()
-                        .Where(pi => pi.UserId == currentUserId.Value && pi.Status == PantryItemStatus.Active)
-                        .Select(pi => pi.ProductId)
-                        .ToListAsync();
-
-                    dbQuery = dbQuery.Where(p => !userActiveProductIds.Contains(p.Id));
-                }
-            }
-            else
+            if (excludePantry)
             {
-                dbQuery = dbQuery.Where(p => p.CreatedByUserId == null);
+                var userActiveProductIds = await _dbContext.PantryItems
+                    .AsNoTracking()
+                    .Where(pi => pi.UserId == userId && pi.Status == PantryItemStatus.Active)
+                    .Select(pi => pi.ProductId)
+                    .ToListAsync();
+
+                dbQuery = dbQuery.Where(p => !userActiveProductIds.Contains(p.Id));
             }
 
             if (!string.IsNullOrWhiteSpace(query))
@@ -277,12 +276,12 @@ namespace Granary.Api.Services.Catalog
         }
 
         public async Task<Guid> GetOrCreateCustomProductAsync(
-            Guid userId,
             string name,
             Guid? categoryId = null,
             string? unit = null,
             string? imageUrl = null)
         {
+            var userId = _currentUserService.UserId;
             var trimmedName = name.Trim();
             var existing = await _dbContext.Products
                 .FirstOrDefaultAsync(p => p.CreatedByUserId == userId && p.Name.ToLower() == trimmedName.ToLower());

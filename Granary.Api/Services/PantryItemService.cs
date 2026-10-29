@@ -15,22 +15,25 @@ namespace Granary.Api.Services
         private readonly GranaryDbContext _dbContext;
         private readonly ILogger<PantryItemService> _logger;
         private readonly IFileStorageService _fileStorageService;
+        private readonly ICurrentUserService _currentUserService;
 
         public PantryItemService(
             GranaryDbContext dbContext,
             ILogger<PantryItemService> logger,
-            IFileStorageService fileStorageService)
+            IFileStorageService fileStorageService,
+            ICurrentUserService currentUserService)
         {
             _dbContext = dbContext;
             _logger = logger;
             _fileStorageService = fileStorageService;
+            _currentUserService = currentUserService;
         }
 
         public async Task<ServiceResult<IEnumerable<PantryItemDto>>> GetUserItemsAsync(
-            Guid userId,
             string lang = "pl",
             StorageLocation? location = null)
         {
+            var userId = _currentUserService.UserId;
             var query = _dbContext.PantryItems
                 .AsNoTracking()
                 .Where(pi => pi.UserId == userId && pi.Status == PantryItemStatus.Active);
@@ -67,10 +70,10 @@ namespace Granary.Api.Services
         }
 
         public async Task<ServiceResult<PantryItemDto>> GetByIdAsync(
-            Guid userId,
             Guid pantryItemId,
             string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var item = await _dbContext.PantryItems
                 .AsNoTracking()
                 .Where(pi => pi.Id == pantryItemId && pi.UserId == userId)
@@ -105,10 +108,10 @@ namespace Granary.Api.Services
         }
 
         public async Task<ServiceResult<PantryItemDto>> AddItemAsync(
-            Guid userId,
             CreateOrUpdatePantryItemDto dto,
             string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             Guid targetProductId;
 
             if (dto.ProductId.HasValue && dto.ProductId.Value != Guid.Empty)
@@ -180,7 +183,7 @@ namespace Granary.Api.Services
                 }
 
                 await _dbContext.SaveChangesAsync();
-                return await GetByIdAsync(userId, existingItem.Id, lang);
+                return await GetByIdAsync(existingItem.Id, lang);
             }
 
             var pantryItem = new PantryItem
@@ -200,15 +203,15 @@ namespace Granary.Api.Services
             _dbContext.PantryItems.Add(pantryItem);
             await _dbContext.SaveChangesAsync();
 
-            return await GetByIdAsync(userId, pantryItem.Id, lang);
+            return await GetByIdAsync(pantryItem.Id, lang);
         }
 
         public async Task<ServiceResult<PantryItemDto>> UpdateItemAsync(
-            Guid userId,
             Guid pantryItemId,
             CreateOrUpdatePantryItemDto dto,
             string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var item = await _dbContext.PantryItems
                 .Include(pi => pi.Product)
                     .ThenInclude(p => p.Translations)
@@ -280,11 +283,12 @@ namespace Granary.Api.Services
             _logger.LogInformation("Użytkownik {UserId} zaktualizował produkt {PantryItemId} (Produkt: {ProductId})",
                 userId, pantryItemId, item.ProductId);
 
-            return await GetByIdAsync(userId, item.Id, lang);
+            return await GetByIdAsync(item.Id, lang);
         }
 
-        public async Task<ServiceResult<bool>> DeleteItemAsync(Guid userId, Guid pantryItemId)
+        public async Task<ServiceResult<bool>> DeleteItemAsync(Guid pantryItemId)
         {
+            var userId = _currentUserService.UserId;
             var item = await _dbContext.PantryItems
                 .Include(pi => pi.Product)
                 .FirstOrDefaultAsync(pi => pi.Id == pantryItemId && pi.UserId == userId);
@@ -326,11 +330,11 @@ namespace Granary.Api.Services
         }
 
         public async Task<ServiceResult<IEnumerable<ExpiringPantryItemDto>>> GetExpiringItemsAsync(
-            Guid userId,
             string lang = "pl",
             int days = 4,
             int limit = 10)
         {
+            var userId = _currentUserService.UserId;
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var maxDate = today.AddDays(days);
 

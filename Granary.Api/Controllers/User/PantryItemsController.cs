@@ -26,8 +26,7 @@ namespace Granary.Api.Controllers.Mobile
         [HttpGet]
         public async Task<IActionResult> GetMyItems([FromQuery] StorageLocation? location, [FromQuery] string lang = "pl")
         {
-            var userId = GetCurrentUserId();
-            var result = await _pantryService.GetUserItemsAsync(userId, lang, location);
+            var result = await _pantryService.GetUserItemsAsync(lang, location);
             return HandleServiceResult(result);
         }
 
@@ -37,8 +36,7 @@ namespace Granary.Api.Controllers.Mobile
         [HttpPost]
         public async Task<IActionResult> AddToPantry([FromBody] CreateOrUpdatePantryItemDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _pantryService.AddItemAsync(userId, dto);
+            var result = await _pantryService.AddItemAsync(dto);
             return HandleServiceResult(result);
         }
 
@@ -48,8 +46,7 @@ namespace Granary.Api.Controllers.Mobile
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateItem(Guid id, [FromBody] CreateOrUpdatePantryItemDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _pantryService.UpdateItemAsync(userId, id, dto);
+            var result = await _pantryService.UpdateItemAsync(id, dto);
             return HandleServiceResult(result);
         }
                 
@@ -59,8 +56,7 @@ namespace Granary.Api.Controllers.Mobile
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteItem(Guid id)
         {
-            var userId = GetCurrentUserId();
-            var result = await _pantryService.DeleteItemAsync(userId, id);
+            var result = await _pantryService.DeleteItemAsync(id);
             return HandleServiceResult(result);
         }
 
@@ -71,8 +67,7 @@ namespace Granary.Api.Controllers.Mobile
         [HttpGet("expiring")]
         public async Task<IActionResult> GetExpiringItems([FromQuery] int days = 4, [FromQuery] int limit = 10, [FromQuery] string lang = "pl")
         {
-            var userId = GetCurrentUserId();
-            var result = await _pantryService.GetExpiringItemsAsync(userId, lang, days, limit);
+            var result = await _pantryService.GetExpiringItemsAsync(lang, days, limit);
             return HandleServiceResult(result);
         }
 

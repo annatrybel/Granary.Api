@@ -28,8 +28,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(PagedResult<RecipeMatchDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRecipes([FromQuery] RecipeFilterQueryDto filter)
         {
-            var userId = GetCurrentUserId();
-            var result = await _recipeService.GetFilteredRecipesAsync(userId, filter);
+            var result = await _recipeService.GetFilteredRecipesAsync(filter);
             return HandleServiceResult(result);
         }
 
@@ -41,8 +40,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(Guid id, [FromQuery] string lang = "pl")
         {
-            var userId = GetCurrentUserId();
-            var result = await _recipeService.GetByIdAsync(id, userId, lang);
+            var result = await _recipeService.GetByIdAsync(id, lang);
             return HandleServiceResult(result);
         }
 
@@ -53,8 +51,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> ToggleFavorite(Guid id)
         {
-            var userId = GetCurrentUserId();
-            var result = await _recipeService.ToggleFavoriteAsync(id, userId);
+            var result = await _recipeService.ToggleFavoriteAsync(id);
             return HandleServiceResult(result);
         }
 
@@ -65,8 +62,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(VoteResultDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Vote(Guid id, [FromBody] VoteRecipeRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await _recipeService.VoteRecipeAsync(id, userId, request.IsLike);
+            var result = await _recipeService.VoteRecipeAsync(id, request.IsLike);
             return HandleServiceResult(result);
         }
 
@@ -78,8 +74,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateCustomRecipe([FromBody] CreateCustomRecipeDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _recipeService.CreateCustomRecipeAsync(dto, userId);
+            var result = await _recipeService.CreateCustomRecipeAsync(dto);
             return HandleServiceResult(result);
         }
 
@@ -87,8 +82,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var userId = GetCurrentUserId();
-            var result = await _recipeService.DeleteRecipeAsync(id, userId);
+            var result = await _recipeService.DeleteRecipeAsync(id);
             return HandleServiceResult(result);
         }
 
@@ -96,8 +90,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(RecipeDetailDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateCustomRecipeDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _recipeService.UpdateCustomRecipeAsync(id, dto, userId);
+            var result = await _recipeService.UpdateCustomRecipeAsync(id, dto);
             return HandleServiceResult(result);
         }
 

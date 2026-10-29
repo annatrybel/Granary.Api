@@ -6,12 +6,12 @@ namespace Granary.Api.Services.Interfaces
 {
     public interface IRecipeService
     {
-        Task<ServiceResult<PagedResult<RecipeMatchDto>>> GetFilteredRecipesAsync(Guid userId, RecipeFilterQueryDto filter);
-        Task<ServiceResult<RecipeDetailDto>> GetByIdAsync(Guid recipeId, Guid userId, string lang = "pl");
-        Task<ServiceResult<bool>> ToggleFavoriteAsync(Guid recipeId, Guid userId);
-        Task<ServiceResult<VoteResultDto>> VoteRecipeAsync(Guid recipeId, Guid userId, bool isLike);
-        Task<ServiceResult<RecipeDetailDto>> CreateCustomRecipeAsync(CreateCustomRecipeDto dto, Guid userId);
-        Task<ServiceResult<RecipeDetailDto>> UpdateCustomRecipeAsync(Guid recipeId, CreateCustomRecipeDto dto, Guid userId);
-        Task<ServiceResult<bool>> DeleteRecipeAsync(Guid recipeId, Guid userId);
+        Task<ServiceResult<PagedResult<RecipeMatchDto>>> GetFilteredRecipesAsync(RecipeFilterQueryDto filter);
+        Task<ServiceResult<RecipeDetailDto>> GetByIdAsync(Guid recipeId, string lang = "pl");
+        Task<ServiceResult<bool>> ToggleFavoriteAsync(Guid recipeId);
+        Task<ServiceResult<VoteResultDto>> VoteRecipeAsync(Guid recipeId, bool isLike);
+        Task<ServiceResult<RecipeDetailDto>> CreateCustomRecipeAsync(CreateCustomRecipeDto dto);
+        Task<ServiceResult<RecipeDetailDto>> UpdateCustomRecipeAsync(Guid recipeId, CreateCustomRecipeDto dto);
+        Task<ServiceResult<bool>> DeleteRecipeAsync(Guid recipeId);
     }
 }

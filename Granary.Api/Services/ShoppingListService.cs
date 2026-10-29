@@ -2,6 +2,7 @@
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Shopping;
 using Granary.Api.Models.Enums;
+using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.EntityFrameworkCore;
@@ -13,18 +14,25 @@ namespace Granary.Api.Services.Shopping
         private readonly GranaryDbContext _dbContext;
         private readonly ILogger<ShoppingListService> _logger;
         private readonly ICatalogProductService _catalogService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ShoppingListService(GranaryDbContext dbContext, ILogger<ShoppingListService> logger, ICatalogProductService catalogService)
+        public ShoppingListService(
+            GranaryDbContext dbContext,
+            ILogger<ShoppingListService> logger,
+            ICatalogProductService catalogService,
+            ICurrentUserService currentUserService)
         {
             _dbContext = dbContext;
             _logger = logger;
             _catalogService = catalogService;
+            _currentUserService = currentUserService;
         }
 
         #region Zarządzanie Listami
 
-        public async Task<ServiceResult<IEnumerable<ShoppingListSummaryDto>>> GetUserListsAsync(Guid userId, string lang = "pl")
+        public async Task<ServiceResult<IEnumerable<ShoppingListSummaryDto>>> GetUserListsAsync(string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var isEnglish = lang.Trim().ToLower().StartsWith("en");
 
             var lists = await _dbContext.ShoppingLists
@@ -56,14 +64,15 @@ namespace Granary.Api.Services.Shopping
                 _dbContext.ShoppingLists.Add(mainList);
                 await _dbContext.SaveChangesAsync();
 
-                return await GetUserListsAsync(userId, lang);
+                return await GetUserListsAsync(lang);
             }
 
             return ServiceResult<IEnumerable<ShoppingListSummaryDto>>.Success(lists);
         }
 
-        public async Task<ServiceResult<ShoppingListDetailDto>> GetListDetailsAsync(Guid userId, Guid listId, string lang = "pl")
+        public async Task<ServiceResult<ShoppingListDetailDto>> GetListDetailsAsync(Guid listId, string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var normalizedLang = (lang ?? "pl").Trim().ToLower();
 
             var targetLang = await _dbContext.Languages
@@ -121,8 +130,9 @@ namespace Granary.Api.Services.Shopping
             return ServiceResult<ShoppingListDetailDto>.Success(dto);
         }
 
-        public async Task<ServiceResult<ShoppingListSummaryDto>> CreateListAsync(Guid userId, CreateShoppingListDto dto)
+        public async Task<ServiceResult<ShoppingListSummaryDto>> CreateListAsync(CreateShoppingListDto dto)
         {
+            var userId = _currentUserService.UserId;
             var newList = new ShoppingList
             {
                 Id = Guid.NewGuid(),
@@ -146,8 +156,9 @@ namespace Granary.Api.Services.Shopping
             });
         }
 
-        public async Task<ServiceResult<bool>> DeleteListAsync(Guid userId, Guid listId)
+        public async Task<ServiceResult<bool>> DeleteListAsync(Guid listId)
         {
+            var userId = _currentUserService.UserId;
             var list = await _dbContext.ShoppingLists.FirstOrDefaultAsync(sl => sl.Id == listId && sl.UserId == userId);
 
             if (list == null) return ServiceResult<bool>.Failure("Nie znaleziono listy zakupów.");
@@ -164,8 +175,9 @@ namespace Granary.Api.Services.Shopping
 
         #region Zarządzanie Pozycjami na Liście
 
-        public async Task<ServiceResult<ShoppingItemDto>> AddItemAsync(Guid userId, Guid listId, AddShoppingItemDto dto, string lang = "pl")
+        public async Task<ServiceResult<ShoppingItemDto>> AddItemAsync(Guid listId, AddShoppingItemDto dto, string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var list = await _dbContext.ShoppingLists.FirstOrDefaultAsync(sl => sl.Id == listId && sl.UserId == userId);
             if (list == null) return ServiceResult<ShoppingItemDto>.Failure("Nie znaleziono listy.");
 
@@ -226,8 +238,9 @@ namespace Granary.Api.Services.Shopping
             });
         }
 
-        public async Task<ServiceResult<ShoppingItemDto>> AddFromPantryItemAsync(Guid userId, Guid listId, Guid pantryItemId, string lang = "pl")
+        public async Task<ServiceResult<ShoppingItemDto>> AddFromPantryItemAsync(Guid listId, Guid pantryItemId, string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var pantryItem = await _dbContext.PantryItems
                 .Include(pi => pi.Product)
                 .FirstOrDefaultAsync(pi => pi.Id == pantryItemId && pi.UserId == userId);
@@ -241,11 +254,12 @@ namespace Granary.Api.Services.Shopping
                 Unit = pantryItem.Unit
             };
 
-            return await AddItemAsync(userId, listId, addDto, lang);
+            return await AddItemAsync(listId, addDto, lang);
         }
 
-        public async Task<ServiceResult<bool>> DeleteItemAsync(Guid userId, Guid listId, Guid itemId)
+        public async Task<ServiceResult<bool>> DeleteItemAsync(Guid listId, Guid itemId)
         {
+            var userId = _currentUserService.UserId;
             var item = await _dbContext.ShoppingListItems
                 .FirstOrDefaultAsync(i => i.Id == itemId && i.ShoppingListId == listId && i.ShoppingList.UserId == userId);
 
@@ -256,8 +270,9 @@ namespace Granary.Api.Services.Shopping
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<bool>> DeleteItemsAsync(Guid userId, Guid listId, List<Guid> itemIds)
+        public async Task<ServiceResult<bool>> DeleteItemsAsync(Guid listId, List<Guid> itemIds)
         {
+            var userId = _currentUserService.UserId;
             if (!itemIds.Any()) return ServiceResult<bool>.Failure("Nie wybrano żadnych pozycji do usunięcia.");
 
             var itemsToDelete = await _dbContext.ShoppingListItems
@@ -277,8 +292,9 @@ namespace Granary.Api.Services.Shopping
 
         #region MASOWE PRZENOSZENIE DO MAGAZYNU (BULK TRANSFER)
 
-        public async Task<ServiceResult<bool>> BulkTransferToPantryAsync(Guid userId, Guid listId, BulkTransferToPantryDto dto)
+        public async Task<ServiceResult<bool>> BulkTransferToPantryAsync(Guid listId, BulkTransferToPantryDto dto)
         {
+            var userId = _currentUserService.UserId;
             if (!dto.ItemIds.Any()) return ServiceResult<bool>.Failure("Nie zaznaczono żadnych produktów.");
 
             var itemsToTransfer = await _dbContext.ShoppingListItems
@@ -299,7 +315,7 @@ namespace Granary.Api.Services.Shopping
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
-                    ProductId = item.ProductId ?? await _catalogService.GetOrCreateCustomProductAsync(userId, item.Name, unit: item.Unit),
+                    ProductId = item.ProductId ?? await _catalogService.GetOrCreateCustomProductAsync(item.Name, unit: item.Unit),
                     StorageLocation = dto.DestinationLocation,
                     Status = PantryItemStatus.Active,
                     Quantity = item.Quantity,

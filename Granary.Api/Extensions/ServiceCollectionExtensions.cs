@@ -65,8 +65,9 @@ public static class ServiceCollectionExtensions
             options.ClientId = configuration["GOOGLE_CLIENT_ID"] ?? string.Empty;
             options.ClientSecret = configuration["GOOGLE_CLIENT_SECRET"] ?? string.Empty;
 
-            options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.CorrelationCookie.SameSite = SameSiteMode.None; 
+            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always; 
+            options.CorrelationCookie.Path = "/";
             options.CorrelationCookie.HttpOnly = true;
             options.CorrelationCookie.IsEssential = true;
 
@@ -180,6 +181,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<LanguageSeeder>();
 
         // Serwisy domenowe
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IEmailService, EmailService>();

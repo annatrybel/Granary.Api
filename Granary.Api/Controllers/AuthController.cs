@@ -122,21 +122,20 @@ namespace Granary.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
         {
+            var frontendUrl = _configuration["FRONTEND_BASE_URL"] ?? "https://granarymobile-user-app.vercel.app";
+
             if (remoteError != null)
             {
-                return Redirect($"{_configuration["FRONTEND_BASE_URL"]}/login?error={WebUtility.UrlEncode(remoteError)}");
+                return Redirect($"{frontendUrl}/login?error={WebUtility.UrlEncode(remoteError)}");
             }
 
             var result = await _authService.HandleExternalLoginAsync();
-
-            var frontendUrl = _configuration["FRONTEND_BASE_URL"] ?? "http://localhost:3000";
 
             if (!result.IsSuccess)
             {
                 return Redirect($"{frontendUrl}/login?error={WebUtility.UrlEncode(result.Error.Description)}");
             }
 
-            // Przesyłamy token w URL (SPA go odczyta i zapisze w localStorage)
             return Redirect($"{frontendUrl}/login-success?token={result.Data.Token}");
         }
 

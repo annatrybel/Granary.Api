@@ -28,41 +28,36 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(UserProfileDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMyProfile()
         {
-            var userId = GetCurrentUserId();
-            var result = await _profileService.GetProfileAsync(userId);
+            var result = await _profileService.GetProfileAsync();
             return HandleServiceResult(result);
         }
 
         [HttpPatch("dark-mode")]
         public async Task<IActionResult> UpdateDarkMode([FromBody] UpdateDarkModeDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _profileService.UpdateDarkModeAsync(userId, dto.DarkMode);
+            var result = await _profileService.UpdateDarkModeAsync(dto.DarkMode);
             return HandleServiceResult(result);
         }
 
         [HttpPatch("language")]
         public async Task<IActionResult> UpdateLanguage([FromBody] UpdateLanguageDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _profileService.UpdateLanguageAsync(userId, dto.Language);
+            var result = await _profileService.UpdateLanguageAsync(dto.Language);
             return HandleServiceResult(result);
         }
 
         [HttpPut("update-profile")]
         public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _profileService.UpdateProfileAsync(userId, dto);
+            var result = await _profileService.UpdateProfileAsync(dto);
             return HandleServiceResult(result);
         }
 
         [HttpPost("invite-member")]
         public async Task<IActionResult> InviteMember([FromBody] SendInvitationRequestDto dto)
         {
-            var userId = GetCurrentUserId();
             var hostUrl = $"{Request.Scheme}://{Request.Host}";
-            var result = await _profileService.SendInvitationAsync(userId, dto, hostUrl);
+            var result = await _profileService.SendInvitationAsync(dto, hostUrl);
             return HandleServiceResult(result);
         }
 
@@ -78,8 +73,7 @@ namespace Granary.Api.Controllers.Mobile
         [HttpPatch("notifications-settings")]
         public async Task<IActionResult> UpdateExpiryNotifications([FromBody] UpdateExpiryNotificationsDto dto)
         {
-            var userId = GetCurrentUserId();
-            var result = await _profileService.UpdateExpiryNotificationsAsync(userId, dto.ExpiryNotifications);
+            var result = await _profileService.UpdateExpiryNotificationsAsync(dto.ExpiryNotifications);
             return HandleServiceResult(result);
         }
 
@@ -87,16 +81,14 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetNotifications([FromQuery] bool onlyUnread = true)
         {
-            var userId = GetCurrentUserId();
-            var result = await _profileService.GetNotificationsAsync(userId, onlyUnread);
+            var result = await _profileService.GetNotificationsAsync(onlyUnread);
             return HandleServiceResult(result);
         }
 
         [HttpPatch("notifications/{id:guid}/read")]
         public async Task<IActionResult> MarkNotificationAsRead([FromRoute] Guid id)
         {
-            var userId = GetCurrentUserId();
-            var result = await _profileService.MarkNotificationAsReadAsync(userId, id);
+            var result = await _profileService.MarkNotificationAsReadAsync(id);
             return HandleServiceResult(result);
         }
 

@@ -17,16 +17,23 @@ namespace Granary.Api.Services
         private readonly GranaryDbContext _context;
         private readonly ILogger<RecipeService> _logger;
         private readonly IFileStorageService _fileStorageService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public RecipeService(GranaryDbContext context, ILogger<RecipeService> logger, IFileStorageService fileStorageService)
+        public RecipeService(
+            GranaryDbContext context,
+            ILogger<RecipeService> logger,
+            IFileStorageService fileStorageService,
+            ICurrentUserService currentUserService)
         {
             _context = context;
             _logger = logger;
             _fileStorageService = fileStorageService;
+            _currentUserService = currentUserService;
         }
 
-        public async Task<ServiceResult<PagedResult<RecipeMatchDto>>> GetFilteredRecipesAsync(Guid userId, RecipeFilterQueryDto filter)
+        public async Task<ServiceResult<PagedResult<RecipeMatchDto>>> GetFilteredRecipesAsync(RecipeFilterQueryDto filter)
         {
+            var userId = _currentUserService.UserId;
             var page = filter.Page < 1 ? 1 : filter.Page;
             var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
 
@@ -210,8 +217,9 @@ namespace Granary.Api.Services
             });
         }
 
-        public async Task<ServiceResult<RecipeDetailDto>> GetByIdAsync(Guid recipeId, Guid userId, string lang = "pl")
+        public async Task<ServiceResult<RecipeDetailDto>> GetByIdAsync(Guid recipeId, string lang = "pl")
         {
+            var userId = _currentUserService.UserId;
             var normalizedLang = (lang ?? "pl").Trim().ToLower();
             var targetLang = await _context.Languages.AsNoTracking().FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang);
             var targetLangId = targetLang?.Id ?? Guid.Empty;
@@ -277,8 +285,9 @@ namespace Granary.Api.Services
             return ServiceResult<RecipeDetailDto>.Success(detail);
         }
 
-        public async Task<ServiceResult<bool>> ToggleFavoriteAsync(Guid recipeId, Guid userId)
+        public async Task<ServiceResult<bool>> ToggleFavoriteAsync(Guid recipeId)
         {
+            var userId = _currentUserService.UserId;
             var interaction = await _context.UserRecipeInteractions
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.RecipeId == recipeId);
 
@@ -310,8 +319,9 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(interaction.IsFavorite);
         }
 
-        public async Task<ServiceResult<VoteResultDto>> VoteRecipeAsync(Guid recipeId, Guid userId, bool isLike)
+        public async Task<ServiceResult<VoteResultDto>> VoteRecipeAsync(Guid recipeId, bool isLike)
         {
+            var userId = _currentUserService.UserId;
             var interaction = await _context.UserRecipeInteractions
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.RecipeId == recipeId);
 
@@ -364,8 +374,9 @@ namespace Granary.Api.Services
             });
         }
 
-        public async Task<ServiceResult<RecipeDetailDto>> CreateCustomRecipeAsync(CreateCustomRecipeDto dto, Guid userId)
+        public async Task<ServiceResult<RecipeDetailDto>> CreateCustomRecipeAsync(CreateCustomRecipeDto dto)
         {
+            var userId = _currentUserService.UserId;
             if (string.IsNullOrWhiteSpace(dto.Title))
             {
                 return ServiceResult<RecipeDetailDto>.Failure("Nazwa przepisu nie może być pusta.");
@@ -465,8 +476,9 @@ namespace Granary.Api.Services
             return ServiceResult<RecipeDetailDto>.Success(detailDto);
         }
 
-        public async Task<ServiceResult<bool>> DeleteRecipeAsync(Guid recipeId, Guid userId)
+        public async Task<ServiceResult<bool>> DeleteRecipeAsync(Guid recipeId)
         {
+            var userId = _currentUserService.UserId;
             var recipe = await _context.Recipes
                 .Include(r => r.Ingredients)
                 .FirstOrDefaultAsync(r => r.Id == recipeId);
@@ -495,8 +507,9 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<RecipeDetailDto>> UpdateCustomRecipeAsync(Guid recipeId, CreateCustomRecipeDto dto, Guid userId)
+        public async Task<ServiceResult<RecipeDetailDto>> UpdateCustomRecipeAsync(Guid recipeId, CreateCustomRecipeDto dto)
         {
+            var userId = _currentUserService.UserId;
             if (string.IsNullOrWhiteSpace(dto.Title))
             {
                 return ServiceResult<RecipeDetailDto>.Failure("Nazwa przepisu nie może być pusta.");
@@ -580,7 +593,7 @@ namespace Granary.Api.Services
             await _context.RecipeIngredients.AddRangeAsync(newIngredients);
             await _context.SaveChangesAsync();
 
-            return await GetByIdAsync(recipe.Id, userId);
+            return await GetByIdAsync(recipe.Id);
         }
 
         private static (decimal quantity, string unit) ParseQuantityAndUnit(string input)

@@ -24,8 +24,7 @@ namespace Granary.Api.Controllers.AdminPanel
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? query, [FromQuery] Guid? categoryId, [FromQuery] bool excludePantry = false) 
         {
-            var userId = GetCurrentUserId();
-            var result = await _catalogService.SearchAsync(query, categoryId, userId, excludePantry);
+            var result = await _catalogService.SearchAsync(query, categoryId, excludePantry);
             return HandleServiceResult(result);
         }
 

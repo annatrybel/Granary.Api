@@ -126,7 +126,6 @@ namespace Granary.Api.Services
             return ServiceResult.Failure(AuthErrors.UserCreationFailed());
         }
 
-
         public async Task<ServiceResult<LoginResponse>> Login(LoginDto loginDto)
         {
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
@@ -149,13 +148,23 @@ namespace Granary.Api.Services
 
             return ServiceResult<LoginResponse>.Success(new LoginResponse(token));
         }
-
         private async Task<string> GenerateJwtTokenAsync(ApplicationUser user)
         {
+            var userIdString = user.Id.ToString();
+
             var claims = new List<Claim>
             {
+                new Claim(ClaimTypes.NameIdentifier, userIdString),
+                new Claim(JwtRegisteredClaimNames.Sub, userIdString),
+                new Claim("sub", userIdString),
+                new Claim("id", userIdString),
+                new Claim("userId", userIdString),
+
                 new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -163,18 +172,20 @@ namespace Granary.Api.Services
             foreach (var role in userRoles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim("role", role));
+                claims.Add(new Claim("roles", role));
             }
 
-            var secret = _configuration["JWT:Secret"];
-            var issuer = _configuration["JWT:Issuer"];
-            var audience = _configuration["JWT:Audience"];
+            var secret = _configuration["JWT__Secret"] ?? _configuration["JWT:Secret"];
+            var issuer = _configuration["JWT__Issuer"] ?? _configuration["JWT:Issuer"];
+            var audience = _configuration["JWT__Audience"] ?? _configuration["JWT:Audience"];
 
             if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(audience))
-                throw new InvalidOperationException("Konfiguracja JWT jest niekompletna.");
+                throw new InvalidOperationException("Konfiguracja JWT jest niekompletna (brak JWT Secret, Issuer lub Audience).");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.Now.AddDays(7);
+            var expires = DateTime.UtcNow.AddDays(7);
 
             var token = new JwtSecurityToken(
                 issuer: issuer,
@@ -186,7 +197,6 @@ namespace Granary.Api.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
 
         public async Task<ServiceResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
         {
@@ -202,7 +212,7 @@ namespace Granary.Api.Services
             var frontEndBaseUrl = _configuration["FRONTEND_BASE_URL"];
             if (string.IsNullOrEmpty(frontEndBaseUrl))
             {
-                Console.WriteLine("OSTRZEŻENIE: Brak konfiguracji FRONTEND_BASE_URL. Używam domyślnego adresu 'http://localhost:3000' do wygenerowania linku resetowania hasła.");
+                Console.WriteLine("OSTRZEŻENIE: Brak konfiguracji FRONTEND_BASE_URL. Używam domyślnego adresu 'http://localhost:3000'.");
                 frontEndBaseUrl = "http://localhost:3000";
             }
 
@@ -313,15 +323,17 @@ namespace Granary.Api.Services
         public async Task<ServiceResult<UserDto>> GetMe()
         {
             var userPrincipal = _httpContextAccessor.HttpContext?.User;
-            var userId = userPrincipal?.FindFirstValue(ClaimTypes.NameIdentifier);
-            var roleClaim = userPrincipal?.FindFirstValue(ClaimTypes.Role) ?? "User";
+            var userId = userPrincipal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                      ?? userPrincipal?.FindFirstValue("sub")
+                      ?? userPrincipal?.FindFirstValue("id");
+            var roleClaim = userPrincipal?.FindFirstValue(ClaimTypes.Role) ?? userPrincipal?.FindFirstValue("role") ?? "User";
 
             if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
             {
                 return ServiceResult<UserDto>.Failure(CommonErrors.Unauthorized());
             }
 
-            var userDto = await _context.Users                
+            var userDto = await _context.Users
                 .Where(u => u.Id == userGuid)
                 .Select(u => new UserDto
                 {
