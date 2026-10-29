@@ -35,16 +35,23 @@ public static class ServiceCollectionExtensions
         })
         .AddJwtBearer(options =>
         {
+            var jwtSecret = configuration["JWT:Secret"] ?? configuration["JWT__Secret"] ?? string.Empty;
+            var jwtIssuer = configuration["JWT:Issuer"] ?? configuration["JWT__Issuer"];
+            var jwtAudience = configuration["JWT:Audience"] ?? configuration["JWT__Audience"];
+
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
+                ValidateIssuer = !string.IsNullOrEmpty(jwtIssuer),
+                ValidateAudience = !string.IsNullOrEmpty(jwtAudience),
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = configuration["JWT__Issuer"],
-                ValidAudience = configuration["JWT__Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"] ?? string.Empty))
+
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                ClockSkew = TimeSpan.FromMinutes(5) 
             };
+
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = context =>
