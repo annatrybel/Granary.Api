@@ -2,12 +2,14 @@
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Auth;
 using Granary.Api.Models.Dto.Users;
+using Granary.Api.Models.Settings;
 using Granary.Api.Services.Errors;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -24,17 +26,19 @@ namespace Granary.Api.Services
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly IEmailSender _emailSender;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly JwtSettings _jwtSettings;
         private readonly GranaryDbContext _context;
-        private const string ObjectName = "User";
 
-        public AuthService(UserManager<ApplicationUser> userManager,
+        public AuthService(
+            UserManager<ApplicationUser> userManager,
             ILogger<AuthService> logger,
             IConfiguration configuration,
             SignInManager<ApplicationUser> signInManager,
             IWebHostEnvironment hostingEnvironment,
             IEmailSender emailSender,
-            IHttpContextAccessor httpContextAccessor,
+            ICurrentUserService currentUserService,
+            IOptions<JwtSettings> jwtOptions,
             GranaryDbContext context)
         {
             _userManager = userManager;
@@ -43,7 +47,8 @@ namespace Granary.Api.Services
             _signInManager = signInManager;
             _hostingEnvironment = hostingEnvironment;
             _emailSender = emailSender;
-            _httpContextAccessor = httpContextAccessor;
+            _currentUserService = currentUserService;
+            _jwtSettings = jwtOptions.Value;
             _context = context;
         }
 
@@ -153,35 +158,30 @@ namespace Granary.Api.Services
             var userIdString = user.Id.ToString();
 
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, userIdString),
-                new Claim(JwtRegisteredClaimNames.Sub, userIdString),
-                new Claim("sub", userIdString),
-                new Claim("id", userIdString),
-                new Claim("userId", userIdString),
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, userIdString),        
+        new Claim(ClaimTypes.NameIdentifier, userIdString),          
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
 
-                new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
-                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+        new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+        new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
+        new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
+    };
 
             var userRoles = await _userManager.GetRolesAsync(user);
             foreach (var role in userRoles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
                 claims.Add(new Claim("role", role));
-                claims.Add(new Claim("roles", role));
             }
 
             var secret = _configuration["JWT__Secret"] ?? _configuration["JWT:Secret"];
             var issuer = _configuration["JWT__Issuer"] ?? _configuration["JWT:Issuer"];
             var audience = _configuration["JWT__Audience"] ?? _configuration["JWT:Audience"];
 
-            if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(audience))
-                throw new InvalidOperationException("Konfiguracja JWT jest niekompletna (brak JWT Secret, Issuer lub Audience).");
+            if (string.IsNullOrEmpty(secret))
+                throw new InvalidOperationException("Brak klucza JWT Secret.");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -322,32 +322,28 @@ namespace Granary.Api.Services
 
         public async Task<ServiceResult<UserDto>> GetMe()
         {
-            var userPrincipal = _httpContextAccessor.HttpContext?.User;
-            var userId = userPrincipal?.FindFirstValue(ClaimTypes.NameIdentifier)
-                      ?? userPrincipal?.FindFirstValue("sub")
-                      ?? userPrincipal?.FindFirstValue("id");
-            var roleClaim = userPrincipal?.FindFirstValue(ClaimTypes.Role) ?? userPrincipal?.FindFirstValue("role") ?? "User";
-
-            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+            if (!_currentUserService.IsAuthenticated)
             {
                 return ServiceResult<UserDto>.Failure(CommonErrors.Unauthorized());
             }
 
+            var userId = _currentUserService.UserId;
+
             var userDto = await _context.Users
-                .Where(u => u.Id == userGuid)
+                .Where(u => u.Id == userId)
                 .Select(u => new UserDto
                 {
                     UserId = u.Id.ToString(),
                     UserName = u.UserName ?? "",
                     Email = u.Email ?? "",
                     AvatarUrl = u.AvatarUrl,
-                    RoleName = roleClaim
+                    RoleName = "User"
                 })
                 .FirstOrDefaultAsync();
 
             if (userDto == null)
             {
-                return ServiceResult<UserDto>.Failure(CommonErrors.NotFound("User", userId));
+                return ServiceResult<UserDto>.Failure(CommonErrors.NotFound("User", userId.ToString()));
             }
 
             return ServiceResult<UserDto>.Success(userDto);

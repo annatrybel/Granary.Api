@@ -1,4 +1,5 @@
 ﻿using Granary.Api.Jobs;
+using Granary.Api.Models.Settings;
 using Granary.Api.Seeders;
 using Granary.Api.Services;
 using Granary.Api.Services.Catalog;
@@ -20,6 +21,21 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
+        var jwtSettings = new JwtSettings();
+        configuration.GetSection(JwtSettings.SectionName).Bind(jwtSettings);
+
+        jwtSettings.Secret = configuration["JWT__Secret"] ?? configuration["JWT:Secret"] ?? jwtSettings.Secret;
+        jwtSettings.Issuer = configuration["JWT__Issuer"] ?? configuration["JWT:Issuer"] ?? jwtSettings.Issuer;
+        jwtSettings.Audience = configuration["JWT__Audience"] ?? configuration["JWT:Audience"] ?? jwtSettings.Audience;
+
+        services.Configure<JwtSettings>(options =>
+        {
+            options.Secret = jwtSettings.Secret;
+            options.Issuer = jwtSettings.Issuer;
+            options.Audience = jwtSettings.Audience;
+            options.ExpiryDays = jwtSettings.ExpiryDays;
+        });
+
         services.ConfigureExternalCookie(options =>
         {
             options.Cookie.SameSite = SameSiteMode.Lax;
@@ -35,25 +51,28 @@ public static class ServiceCollectionExtensions
         })
         .AddJwtBearer(options =>
         {
-            var jwtSecret = configuration["JWT:Secret"] ?? configuration["JWT__Secret"] ?? string.Empty;
-            var jwtIssuer = configuration["JWT:Issuer"] ?? configuration["JWT__Issuer"];
-            var jwtAudience = configuration["JWT:Audience"] ?? configuration["JWT__Audience"];
+            options.IncludeErrorDetails = true;
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = !string.IsNullOrEmpty(jwtIssuer),
-                ValidateAudience = !string.IsNullOrEmpty(jwtAudience),
+                ValidateIssuer = false, 
+                ValidateAudience = false,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
 
-                ValidIssuer = jwtIssuer,
-                ValidAudience = jwtAudience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                ClockSkew = TimeSpan.FromMinutes(5) 
+                ValidIssuer = jwtSettings.Issuer,
+                ValidAudience = jwtSettings.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+                ClockSkew = TimeSpan.FromMinutes(5)
             };
 
             options.Events = new JwtBearerEvents
             {
+                OnAuthenticationFailed = context =>
+                {
+                    Console.WriteLine($"[BŁĄD WALIDACJI JWT]: {context.Exception.GetType().Name} - {context.Exception.Message}");
+                    return Task.CompletedTask;
+                },
                 OnMessageReceived = context =>
                 {
                     var accessToken = context.Request.Query["access_token"];
@@ -72,8 +91,8 @@ public static class ServiceCollectionExtensions
             options.ClientId = configuration["GOOGLE_CLIENT_ID"] ?? string.Empty;
             options.ClientSecret = configuration["GOOGLE_CLIENT_SECRET"] ?? string.Empty;
 
-            options.CorrelationCookie.SameSite = SameSiteMode.None; 
-            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always; 
+            options.CorrelationCookie.SameSite = SameSiteMode.None;
+            options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
             options.CorrelationCookie.Path = "/";
             options.CorrelationCookie.HttpOnly = true;
             options.CorrelationCookie.IsEssential = true;
