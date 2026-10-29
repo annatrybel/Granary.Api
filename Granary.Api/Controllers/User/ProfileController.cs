@@ -1,4 +1,5 @@
-﻿using Granary.Api.Models;
+﻿using Granary.Api.Extensions;
+using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Contact;
 using Granary.Api.Models.Dto.Profile;
@@ -95,7 +96,7 @@ namespace Granary.Api.Controllers.Mobile
         [HttpPost("push-subscription")]
         public async Task<IActionResult> SavePushSubscription([FromBody] PushSubscriptionDto dto, [FromServices] GranaryDbContext db)
         {
-            var userId = GetCurrentUserId();
+            var userId = User.GetUserId();
 
             var exists = await db.DevicePushSubscriptions
                 .AnyAsync(s => s.UserId == userId && s.Endpoint == dto.Endpoint);
