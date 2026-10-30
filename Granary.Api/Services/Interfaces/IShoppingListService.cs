@@ -11,9 +11,10 @@ namespace Granary.Api.Services.Interfaces
         Task<ServiceResult<bool>> DeleteListAsync(Guid listId);
 
         Task<ServiceResult<ShoppingItemDto>> AddItemAsync(Guid listId, AddShoppingItemDto dto, string lang = "pl");
-        Task<ServiceResult<ShoppingItemDto>> AddFromPantryItemAsync(Guid listId, Guid pantryItemId, string lang = "pl");
+        Task<ServiceResult<ShoppingItemDto>> UpdateItemAsync(Guid listId, Guid itemId, UpdateShoppingItemDto dto);
         Task<ServiceResult<bool>> DeleteItemAsync(Guid listId, Guid itemId);
         Task<ServiceResult<bool>> DeleteItemsAsync(Guid listId, List<Guid> itemIds);
         Task<ServiceResult<bool>> BulkTransferToPantryAsync(Guid listId, BulkTransferToPantryDto dto);
+        Task<ServiceResult<int>> AddItemsBulkAsync(Guid listId, IEnumerable<AddShoppingItemDto> dtos, string lang = "pl");
     }
 }

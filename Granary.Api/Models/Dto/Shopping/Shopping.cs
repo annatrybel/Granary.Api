@@ -11,8 +11,22 @@ namespace Granary.Api.Models.Dto.Shopping
         public string? Emoji { get; set; }
         public decimal Quantity { get; set; }
         public string? Unit { get; set; }
-        public bool IsCompleted { get; set; }
+        public bool IsBought { get; set; }
         public DateTime CreatedAt { get; set; }
+    }
+
+    public class UpdateShoppingItemDto
+    {
+        [StringLength(200)]
+        public string? Name { get; set; }
+
+        [Range(0.01, 1000, ErrorMessage = "Ilość musi być większa od 0.")]
+        public decimal? Quantity { get; set; }
+
+        [StringLength(20)]
+        public string? Unit { get; set; }
+
+        public bool? IsBought { get; set; }
     }
 
     

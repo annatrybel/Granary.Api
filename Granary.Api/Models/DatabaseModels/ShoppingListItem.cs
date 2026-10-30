@@ -30,5 +30,7 @@ namespace Granary.Api.Models.DatabaseModels
         public string? Unit { get; set; } = "szt.";
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public bool IsBought { get; set; }
     }
 }

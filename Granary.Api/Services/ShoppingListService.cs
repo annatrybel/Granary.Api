@@ -1,4 +1,6 @@
 ﻿using Granary.Api.Models;
+using Granary.Api.Extensions;
+using Microsoft.Extensions.Caching.Memory;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Shopping;
 using Granary.Api.Models.Enums;
@@ -15,17 +17,20 @@ namespace Granary.Api.Services.Shopping
         private readonly ILogger<ShoppingListService> _logger;
         private readonly ICatalogProductService _catalogService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMemoryCache _cache;
 
         public ShoppingListService(
             GranaryDbContext dbContext,
             ILogger<ShoppingListService> logger,
             ICatalogProductService catalogService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IMemoryCache cache)
         {
             _dbContext = dbContext;
             _logger = logger;
             _catalogService = catalogService;
             _currentUserService = currentUserService;
+            _cache = cache;
         }
 
         #region Zarządzanie Listami
@@ -37,7 +42,6 @@ namespace Granary.Api.Services.Shopping
 
             var lists = await _dbContext.ShoppingLists
                 .AsNoTracking()
-                .Include(sl => sl.Items)
                 .Where(sl => sl.UserId == userId)
                 .OrderByDescending(sl => sl.IsMain)
                 .ThenBy(sl => sl.Name)
@@ -75,23 +79,48 @@ namespace Granary.Api.Services.Shopping
             var userId = _currentUserService.UserId;
             var normalizedLang = (lang ?? "pl").Trim().ToLower();
 
-            var targetLang = await _dbContext.Languages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
-            var targetLangId = targetLang?.Id ?? Guid.Empty;
+            var targetLangId = await _cache.GetLanguageIdAsync(
+                _dbContext, $"lang:shopping:{normalizedLang}",
+                l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
 
             var isEnglish = normalizedLang.StartsWith("en");
 
             var list = await _dbContext.ShoppingLists
                 .AsNoTracking()
-                .Include(sl => sl.Items)
-                    .ThenInclude(i => i.Product)
-                        .ThenInclude(p => p.Translations)
-                .Include(sl => sl.Items)
-                    .ThenInclude(i => i.Product)
-                        .ThenInclude(p => p.Category)
-                            .ThenInclude(c => c.Translations)
-                .FirstOrDefaultAsync(sl => sl.Id == listId && sl.UserId == userId);
+                .Where(sl => sl.Id == listId && sl.UserId == userId)
+                .Select(sl => new
+                {
+                    sl.Id,
+                    sl.Name,
+                    sl.IsMain,
+                    Items = sl.Items
+                        .OrderByDescending(i => i.CreatedAt)
+                        .Select(i => new
+                        {
+                            i.Id,
+                            i.ProductId,
+                            i.Name,
+                            i.Quantity,
+                            i.Unit,
+                            i.CreatedAt,
+                            i.IsBought,
+                            ProductName = i.Product != null ? i.Product.Name : null,
+                            TranslatedName = i.Product != null
+                                ? i.Product.Translations
+                                    .Where(t => t.LanguageId == targetLangId)
+                                    .Select(t => t.Name)
+                                    .FirstOrDefault()
+                                : null,
+                            TranslatedUnit = i.Product != null
+                                ? i.Product.Translations
+                                    .Where(t => t.LanguageId == targetLangId && t.Unit != null)
+                                    .Select(t => t.Unit)
+                                    .FirstOrDefault()
+                                : null
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
 
             if (list == null)
             {
@@ -105,24 +134,15 @@ namespace Granary.Api.Services.Shopping
                 IsMain = list.IsMain,
                 TotalItemsCount = list.Items.Count,
                 Items = list.Items
-                    .OrderByDescending(i => i.CreatedAt)
-                    .Select(i =>
+                    .Select(i => new ShoppingItemDto
                     {
-                        var transName = i.Product?.Translations
-                            .FirstOrDefault(t => t.LanguageId == targetLangId)?.Name;
-
-                        var transUnit = i.Product?.Translations
-                            .FirstOrDefault(t => t.LanguageId == targetLangId && t.Unit != null)?.Unit;
-
-                        return new ShoppingItemDto
-                        {
-                            Id = i.Id,
-                            ProductId = i.ProductId,
-                            Name = transName ?? i.Product?.Name ?? i.Name,
-                            Quantity = i.Quantity,
-                            Unit = transUnit ?? i.Unit,
-                            CreatedAt = i.CreatedAt
-                        };
+                        Id = i.Id,
+                        ProductId = i.ProductId,
+                        Name = i.TranslatedName ?? i.ProductName ?? i.Name,
+                        Quantity = i.Quantity,
+                        Unit = i.TranslatedUnit ?? i.Unit,
+                        IsBought = i.IsBought,
+                        CreatedAt = i.CreatedAt
                     })
                     .ToList()
             };
@@ -238,23 +258,31 @@ namespace Granary.Api.Services.Shopping
             });
         }
 
-        public async Task<ServiceResult<ShoppingItemDto>> AddFromPantryItemAsync(Guid listId, Guid pantryItemId, string lang = "pl")
+        public async Task<ServiceResult<ShoppingItemDto>> UpdateItemAsync(Guid listId, Guid itemId, UpdateShoppingItemDto dto)
         {
             var userId = _currentUserService.UserId;
-            var pantryItem = await _dbContext.PantryItems
-                .Include(pi => pi.Product)
-                .FirstOrDefaultAsync(pi => pi.Id == pantryItemId && pi.UserId == userId);
+            var item = await _dbContext.ShoppingListItems
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.ShoppingListId == listId && i.ShoppingList.UserId == userId);
 
-            if (pantryItem == null) return ServiceResult<ShoppingItemDto>.Failure("Nie znaleziono produktu w spiżarni.");
+            if (item == null) return ServiceResult<ShoppingItemDto>.Failure("Nie znaleziono pozycji.");
 
-            var addDto = new AddShoppingItemDto
+            if (!string.IsNullOrWhiteSpace(dto.Name)) item.Name = dto.Name.Trim();
+            if (dto.Quantity.HasValue) item.Quantity = dto.Quantity.Value;
+            if (!string.IsNullOrWhiteSpace(dto.Unit)) item.Unit = dto.Unit.Trim();
+            if (dto.IsBought.HasValue) item.IsBought = dto.IsBought.Value;
+
+            await _dbContext.SaveChangesAsync();
+
+            return ServiceResult<ShoppingItemDto>.Success(new ShoppingItemDto
             {
-                ProductId = pantryItem.ProductId,
-                Quantity = pantryItem.Quantity,
-                Unit = pantryItem.Unit
-            };
-
-            return await AddItemAsync(listId, addDto, lang);
+                Id = item.Id,
+                ProductId = item.ProductId,
+                Name = item.Name,
+                Quantity = item.Quantity,
+                Unit = item.Unit,
+                IsBought = item.IsBought,
+                CreatedAt = item.CreatedAt
+            });
         }
 
         public async Task<ServiceResult<bool>> DeleteItemAsync(Guid listId, Guid itemId)
@@ -334,6 +362,93 @@ namespace Granary.Api.Services.Shopping
             _logger.LogInformation("Przeniesiono masowo {Count} produktów z listy zakupów do {Location}", itemsToTransfer.Count, dto.DestinationLocation);
 
             return ServiceResult<bool>.Success(true);
+        }
+
+        public async Task<ServiceResult<int>> AddItemsBulkAsync(Guid listId, IEnumerable<AddShoppingItemDto> dtos, string lang = "pl")
+        {
+            var userId = _currentUserService.UserId;
+
+            // Pobieramy listę z jej aktualnymi pozycjami
+            var list = await _dbContext.ShoppingLists
+                .Include(sl => sl.Items)
+                .FirstOrDefaultAsync(sl => sl.Id == listId && sl.UserId == userId);
+
+            if (list == null)
+                return ServiceResult<int>.Failure("Nie znaleziono wskazanej listy zakupów.");
+
+            var dtoList = dtos?.ToList() ?? new List<AddShoppingItemDto>();
+            if (!dtoList.Any())
+                return ServiceResult<int>.Success(0);
+
+            // Pobieramy nazwy dla produktów katalogowych
+            var catalogProductIds = dtoList
+                .Where(d => d.ProductId.HasValue)
+                .Select(d => d.ProductId!.Value)
+                .Distinct()
+                .ToList();
+
+            var existingCatalogProducts = await _dbContext.Products
+                .Where(p => catalogProductIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+            var now = DateTime.UtcNow;
+            var newItemsToAdd = new List<ShoppingListItem>();
+
+            foreach (var dto in dtoList)
+            {
+                string name;
+                Guid? productId = dto.ProductId;
+
+                if (productId.HasValue && existingCatalogProducts.TryGetValue(productId.Value, out var prodName))
+                {
+                    name = prodName;
+                }
+                else if (!string.IsNullOrWhiteSpace(dto.CustomName))
+                {
+                    name = dto.CustomName.Trim();
+                    productId = null;
+                }
+                else
+                {
+                    continue;
+                }
+
+                // 1. Sprawdzamy czy produkt JUŻ JEST na liście
+                bool alreadyExists = list.Items.Any(i =>
+                    (productId.HasValue && i.ProductId == productId) ||
+                    (!productId.HasValue && string.Equals(i.Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
+                );
+
+                // 2. Jeśli jest – ignorujemy i idziemy dalej
+                if (alreadyExists)
+                {
+                    continue;
+                }
+
+                // 3. Jeśli nie ma – tworzymy nową pozycję
+                var newItem = new ShoppingListItem
+                {
+                    Id = Guid.NewGuid(),
+                    ShoppingListId = listId,
+                    ProductId = productId,
+                    Name = name,
+                    Quantity = dto.Quantity > 0 ? dto.Quantity : 1,
+                    Unit = !string.IsNullOrWhiteSpace(dto.Unit) ? dto.Unit : "szt.",
+                    CreatedAt = now
+                };
+
+                newItemsToAdd.Add(newItem);
+                list.Items.Add(newItem); // zapobiega dodaniu duplikatu, jeśli w przepisie ten sam produkt pojawił się dwukrotnie
+            }
+
+            if (newItemsToAdd.Any())
+            {
+                _dbContext.ShoppingListItems.AddRange(newItemsToAdd);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            _logger.LogInformation("Dodano {Count} nowych unikalnych pozycji do listy {ListId}", newItemsToAdd.Count, listId);
+            return ServiceResult<int>.Success(newItemsToAdd.Count);
         }
 
         #endregion

@@ -7,6 +7,8 @@ using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Granary.Api.Services.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Granary.Api.Extensions;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -18,17 +20,20 @@ namespace Granary.Api.Services
         private readonly ILogger<RecipeService> _logger;
         private readonly IFileStorageService _fileStorageService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMemoryCache _cache;
 
         public RecipeService(
             GranaryDbContext context,
             ILogger<RecipeService> logger,
             IFileStorageService fileStorageService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IMemoryCache cache)
         {
             _context = context;
             _logger = logger;
             _fileStorageService = fileStorageService;
             _currentUserService = currentUserService;
+            _cache = cache;
         }
 
         public async Task<ServiceResult<PagedResult<RecipeMatchDto>>> GetFilteredRecipesAsync(RecipeFilterQueryDto filter)
@@ -38,8 +43,7 @@ namespace Granary.Api.Services
             var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
 
             var lang = string.IsNullOrWhiteSpace(filter.Lang) ? "pl" : filter.Lang.Trim().ToLower();
-            var targetLang = await _context.Languages.AsNoTracking().FirstOrDefaultAsync(l => l.Code.ToLower() == lang);
-            var targetLangId = targetLang?.Id ?? Guid.Empty;
+            var targetLangId = await _cache.GetLanguageIdAsync(_context, $"lang:recipes:{lang}", l => l.Code.ToLower() == lang);
 
             var userPantry = await _context.PantryItems
                 .AsNoTracking()
@@ -84,10 +88,6 @@ namespace Granary.Api.Services
 
             var recipesQuery = _context.Recipes
                 .AsNoTracking()
-                .Include(r => r.Translations)
-                .Include(r => r.Ingredients)
-                    .ThenInclude(ri => ri.Product)
-                        .ThenInclude(p => p.Translations)
                 .AsQueryable();
 
             if (hasSelectedItemsFilter)
@@ -102,13 +102,13 @@ namespace Granary.Api.Services
 
             if (!string.IsNullOrWhiteSpace(filter.Query))
             {
-                var normalized = filter.Query.Trim().ToLower();
+                var pattern = filter.Query.Trim().ToContainsPattern();
                 recipesQuery = recipesQuery.Where(r =>
-                    r.Title.ToLower().Contains(normalized) ||
-                    r.Translations.Any(t => t.Title.ToLower().Contains(normalized)) ||
+                    EF.Functions.ILike(r.Title, pattern) ||
+                    r.Translations.Any(t => EF.Functions.ILike(t.Title, pattern)) ||
                     r.Ingredients.Any(i =>
-                        i.Product.Name.ToLower().Contains(normalized) ||
-                        i.Product.Translations.Any(pt => pt.Name.ToLower().Contains(normalized)))
+                        EF.Functions.ILike(i.Product.Name, pattern) ||
+                        i.Product.Translations.Any(pt => EF.Functions.ILike(pt.Name, pattern)))
                 );
             }
 
@@ -117,12 +117,39 @@ namespace Granary.Api.Services
                 recipesQuery = recipesQuery.Where(r => r.PrepTimeMinutes <= filter.MaxTime.Value);
             }
 
-            var matchingRecipes = await recipesQuery.ToListAsync();
+            // Projekcja pobiera tylko pola potrzebne do dopasowania i tylko tłumaczenia w wybranym języku.
+            var matchingRecipes = await recipesQuery
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Title,
+                    r.ImageUrl,
+                    r.PrepTimeMinutes,
+                    r.Servings,
+                    r.Calories,
+                    r.CreatedByUserId,
+                    TranslatedTitle = r.Translations
+                        .Where(t => t.LanguageId == targetLangId)
+                        .Select(t => t.Title)
+                        .FirstOrDefault(),
+                    Ingredients = r.Ingredients.Select(i => new
+                    {
+                        i.ProductId,
+                        i.IsOptional,
+                        i.Quantity,
+                        i.Unit,
+                        ProductName = i.Product.Name,
+                        TranslatedName = i.Product.Translations
+                            .Where(pt => pt.LanguageId == targetLangId)
+                            .Select(pt => pt.Name)
+                            .FirstOrDefault()
+                    }).ToList()
+                })
+                .ToListAsync();
 
             var processed = matchingRecipes.Select(recipe =>
             {
-                var trans = recipe.Translations.FirstOrDefault(t => t.LanguageId == targetLangId);
-                var localizedTitle = trans?.Title ?? recipe.Title;
+                var localizedTitle = recipe.TranslatedTitle ?? recipe.Title;
 
                 var requiredIngredients = recipe.Ingredients.Where(i => !i.IsOptional).ToList();
                 var totalCount = requiredIngredients.Count;
@@ -141,9 +168,7 @@ namespace Granary.Api.Services
                     .Select(i => new MissingIngredientDto
                     {
                         ProductId = i.ProductId,
-                        ProductName = i.Product?.Translations.FirstOrDefault(pt => pt.LanguageId == targetLangId)?.Name
-                                      ?? i.Product?.Name
-                                      ?? "Składnik",
+                        ProductName = i.TranslatedName ?? i.ProductName ?? "Składnik",
                         Quantity = i.Quantity,
                         Unit = i.Unit
                     })
@@ -153,9 +178,7 @@ namespace Granary.Api.Services
                 var matchPct = totalCount > 0 ? (int)Math.Round((double)ownedCount / totalCount * 100) : 100;
                 var expiringSaved = owned.Count(i => expiringProductIds.Contains(i.ProductId));
 
-                var summary = string.Join(", ", owned.Take(3).Select(i =>
-                    i.Product?.Translations.FirstOrDefault(pt => pt.LanguageId == targetLangId)?.Name
-                    ?? i.Product?.Name));
+                var summary = string.Join(", ", owned.Take(3).Select(i => i.TranslatedName ?? i.ProductName));
 
                 userInteractions.TryGetValue(recipe.Id, out var interaction);
 
@@ -221,8 +244,7 @@ namespace Granary.Api.Services
         {
             var userId = _currentUserService.UserId;
             var normalizedLang = (lang ?? "pl").Trim().ToLower();
-            var targetLang = await _context.Languages.AsNoTracking().FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang);
-            var targetLangId = targetLang?.Id ?? Guid.Empty;
+            var targetLangId = await _cache.GetLanguageIdAsync(_context, $"lang:recipes:{normalizedLang}", l => l.Code.ToLower() == normalizedLang);
 
             var recipe = await _context.Recipes
                 .AsNoTracking()

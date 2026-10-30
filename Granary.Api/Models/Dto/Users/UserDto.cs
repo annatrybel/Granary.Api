@@ -20,12 +20,4 @@ namespace Granary.Api.Models.Dto.Users
         public string InvitationCode { get; set; }
         public List<IdentityRole> AvailableRoles { get; set; } = new List<IdentityRole>();
     }
-
-    public class UpdateProfileDto
-    {
-        public string Username { get; set; } = string.Empty;
-        public IFormFile? Avatar { get; set; }
-        [StringLength(500)]
-        public string? Bio { get; set; }
-    }
 }

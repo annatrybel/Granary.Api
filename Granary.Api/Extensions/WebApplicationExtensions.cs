@@ -37,6 +37,7 @@ public static class WebApplicationExtensions
         forwardedHeadersOptions.KnownProxies.Clear();
 
         app.UseForwardedHeaders(forwardedHeadersOptions);
+        app.UseResponseCompression();
 
         var policyCollection = new HeaderPolicyCollection()
             .AddDefaultApiSecurityHeaders()

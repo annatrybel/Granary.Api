@@ -36,7 +36,32 @@ namespace Granary.Api.Models
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.HasPostgresExtension("pg_trgm");
+
             modelBuilder.Entity<UserDto>().HasNoKey().ToView("UserWithRoles");
+
+            // Indeksy trigramowe przyspieszają wyszukiwanie "zawiera" (ILIKE '%tekst%'),
+            // którego zwykły indeks B-tree nie obsługuje.
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Name)
+                .HasDatabaseName("IX_Products_Name_trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
+            modelBuilder.Entity<ProductTranslation>()
+                .HasIndex(pt => pt.Name)
+                .HasDatabaseName("IX_ProductTranslations_Name_trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
+            modelBuilder.Entity<Recipe>()
+                .HasIndex(r => r.Title)
+                .HasDatabaseName("IX_Recipes_Title_trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
+            modelBuilder.Entity<RecipeTranslation>()
+                .HasIndex(rt => rt.Title)
+                .HasDatabaseName("IX_RecipeTranslations_Title_trgm")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops");
 
             
             modelBuilder.Entity<Product>()
@@ -82,10 +107,6 @@ namespace Granary.Api.Models
             modelBuilder.Entity<ProductTranslation>()
                 .HasIndex(pt => new { pt.ProductId, pt.LanguageId })
                 .IsUnique();
-
-            // Indeks pod szybkie wyszukiwanie w autocomplete
-            modelBuilder.Entity<ProductTranslation>()
-                .HasIndex(pt => pt.Name);
 
             // Unikalność tłumaczenia przepisu dla konkretnego języka
             modelBuilder.Entity<RecipeTranslation>()

@@ -36,19 +36,6 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
-        /// <summary>
-        /// Pobiera szczegóły produktu z katalogu.
-        /// </summary>
-        [HttpGet("{id}")]
-        [ProducesResponseType(typeof(CatalogProductDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetById(Guid id, [FromQuery] string lang = "pl")
-        {
-            var result = await _catalogService.GetByIdAsync(id, lang);
-            return HandleServiceResult(result);
-        }
-
         [HttpPost("recognize-image")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> RecognizeImage(

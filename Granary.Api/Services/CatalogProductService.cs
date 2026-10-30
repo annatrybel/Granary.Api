@@ -7,6 +7,8 @@ using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Granary.Api.Extensions;
 using System.Linq.Expressions;
 
 namespace Granary.Api.Services.Catalog
@@ -16,15 +18,18 @@ namespace Granary.Api.Services.Catalog
         private readonly GranaryDbContext _dbContext;
         private readonly ILogger<CatalogProductService> _logger;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMemoryCache _cache;
 
         public CatalogProductService(
             GranaryDbContext dbContext,
             ILogger<CatalogProductService> logger,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IMemoryCache cache)
         {
             _dbContext = dbContext;
             _logger = logger;
             _currentUserService = currentUserService;
+            _cache = cache;
         }
 
         private static Expression<Func<Product, CatalogProductDto>> CreateDtoSelector(Guid targetLangId) => p => new CatalogProductDto
@@ -49,16 +54,12 @@ namespace Granary.Api.Services.Catalog
             var userId = _currentUserService.UserId;
             var normalizedLang = (lang ?? "pl").Trim().ToLower();
 
-            var targetLang = await _dbContext.Languages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
-            var targetLangId = targetLang?.Id ?? Guid.Empty;
+            var targetLangId = await _cache.GetLanguageIdAsync(
+                _dbContext, $"lang:catalog:{normalizedLang}",
+                l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
 
             var dbQuery = _dbContext.Products
                 .AsNoTracking()
-                .Include(p => p.Translations)
-                .Include(p => p.Category)
-                    .ThenInclude(c => c.Translations)
                 .AsQueryable();
 
             dbQuery = dbQuery.Where(p => p.CreatedByUserId == null || p.CreatedByUserId == userId);
@@ -76,11 +77,12 @@ namespace Granary.Api.Services.Catalog
 
             if (!string.IsNullOrWhiteSpace(query))
             {
-                var normalized = query.ToLower().Trim();
+                var pattern = query.Trim().ToContainsPattern();
+                var barcode = query.Trim();
                 dbQuery = dbQuery.Where(p =>
-                    p.Name.ToLower().Contains(normalized) ||
-                    (p.Barcode != null && p.Barcode.Contains(normalized)) ||
-                    p.Translations.Any(t => t.LanguageId == targetLangId && t.Name.ToLower().Contains(normalized))
+                    EF.Functions.ILike(p.Name, pattern) ||
+                    (p.Barcode != null && p.Barcode.Contains(barcode)) ||
+                    p.Translations.Any(t => t.LanguageId == targetLangId && EF.Functions.ILike(t.Name, pattern))
                 );
             }
 

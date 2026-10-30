@@ -20,6 +20,7 @@ namespace Granary.Api.Migrations
                 .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.ApplicationUser", b =>
@@ -395,6 +396,12 @@ namespace Granary.Api.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_Products_Name_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
+
                     b.ToTable("Products");
                 });
 
@@ -423,7 +430,11 @@ namespace Granary.Api.Migrations
 
                     b.HasIndex("LanguageId");
 
-                    b.HasIndex("Name");
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_ProductTranslations_Name_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("ProductId", "LanguageId")
                         .IsUnique();
@@ -467,6 +478,12 @@ namespace Granary.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("Title")
+                        .HasDatabaseName("IX_Recipes_Title_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Title"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("Recipes");
                 });
@@ -528,6 +545,12 @@ namespace Granary.Api.Migrations
 
                     b.HasIndex("LanguageId");
 
+                    b.HasIndex("Title")
+                        .HasDatabaseName("IX_RecipeTranslations_Title_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Title"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
+
                     b.HasIndex("RecipeId", "LanguageId")
                         .IsUnique();
 
@@ -569,6 +592,9 @@ namespace Granary.Api.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsBought")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()

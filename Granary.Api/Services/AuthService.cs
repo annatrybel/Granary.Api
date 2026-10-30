@@ -320,65 +320,6 @@ namespace Granary.Api.Services
             }
         }
 
-        public async Task<ServiceResult<UserDto>> GetMe()
-        {
-            if (!_currentUserService.IsAuthenticated)
-            {
-                return ServiceResult<UserDto>.Failure(CommonErrors.Unauthorized());
-            }
-
-            var userId = _currentUserService.UserId;
-
-            var userDto = await _context.Users
-                .Where(u => u.Id == userId)
-                .Select(u => new UserDto
-                {
-                    UserId = u.Id.ToString(),
-                    UserName = u.UserName ?? "",
-                    Email = u.Email ?? "",
-                    AvatarUrl = u.AvatarUrl,
-                    RoleName = "User"
-                })
-                .FirstOrDefaultAsync();
-
-            if (userDto == null)
-            {
-                return ServiceResult<UserDto>.Failure(CommonErrors.NotFound("User", userId.ToString()));
-            }
-
-            return ServiceResult<UserDto>.Success(userDto);
-        }
-
-        public async Task<ServiceResult> UpdateProfileAsync(string userId, UpdateProfileDto dto)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) return ServiceResult.Failure(CommonErrors.NotFound("User", userId));
-
-            if (!string.IsNullOrWhiteSpace(dto.Username) && dto.Username != user.UserName)
-            {
-                var existing = await _userManager.FindByNameAsync(dto.Username);
-                if (existing != null)
-                    return ServiceResult.Failure(new ServiceError("User.UsernameTaken", "Ta nazwa użytkownika jest już zajęta."));
-
-                user.UserName = dto.Username;
-            }
-
-            if (dto.Avatar != null)
-            {
-                if (!string.IsNullOrEmpty(user.AvatarUrl) && user.AvatarUrl.Contains("cloudinary.com"))
-                {
-                    //await _fileService.DeleteImageAsync(user.AvatarUrl);
-                }
-                //user.AvatarUrl = await _fileService.UploadImageAsync(dto.Avatar);
-            }
-
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-                return ServiceResult.Failure("Wystąpił błąd podczas zapisywania profilu.");
-
-            return ServiceResult.Success();
-        }
-
         public async Task<ServiceResult> LogoutAsync()
         {
             await _signInManager.SignOutAsync();

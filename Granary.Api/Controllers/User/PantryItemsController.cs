@@ -61,15 +61,15 @@ namespace Granary.Api.Controllers.Mobile
         }
 
 
-        /// <summary>
-        /// Pobiera produkty z krótką datą ważności dla Dashboardu (domyślnie do 4 dni).
-        /// </summary>
-        [HttpGet("expiring")]
-        public async Task<IActionResult> GetExpiringItems([FromQuery] int days = 4, [FromQuery] int limit = 10, [FromQuery] string lang = "pl")
-        {
-            var result = await _pantryService.GetExpiringItemsAsync(lang, days, limit);
-            return HandleServiceResult(result);
-        }
+        ///// <summary>
+        ///// Pobiera produkty z krótką datą ważności dla Dashboardu (domyślnie do 4 dni).
+        ///// </summary>
+        //[HttpGet("expiring")]                             //nie uzywany na frontendzie
+        //public async Task<IActionResult> GetExpiringItems([FromQuery] int days = 4, [FromQuery] int limit = 10, [FromQuery] string lang = "pl")
+        //{
+        //    var result = await _pantryService.GetExpiringItemsAsync(lang, days, limit);
+        //    return HandleServiceResult(result);
+        //}
 
         public record GenerateProductImageRequest(string Name);
 

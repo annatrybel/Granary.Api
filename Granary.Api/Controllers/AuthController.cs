@@ -140,41 +140,6 @@ namespace Granary.Api.Controllers
         }
 
         /// <summary>
-        /// Pobiera informacje o aktualnie zalogowanym użytkowniku.
-        /// </summary>
-        /// <remarks>
-        /// Wymaga przesłania poprawnego tokena JWT w nagłówku.
-        /// </remarks>
-        /// <returns>DTO z danymi użytkownika (np. nazwa, e-mail).</returns>
-        [HttpGet("me")]
-        [Authorize]
-        [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)] 
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)] 
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-
-        public async Task<IActionResult> GetMe()
-        {
-            var result = await _authService.GetMe();            
-            return HandleServiceResult(result);
-        }
-
-        /// <summary>
-        /// Aktualizuje nazwę i avatar aktualnie zalogowanego użytkownika.
-        /// </summary>
-        [Authorize]
-        [HttpPut("update-profile")]
-        [Consumes("multipart/form-data")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto dto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            var result = await _authService.UpdateProfileAsync(userId, dto);
-            return HandleServiceResult(result);
-        }
-
-        /// <summary>
         /// Wylogowuje użytkownika z systemu i czyści sesję serwera.
         /// </summary>
         [Authorize]
