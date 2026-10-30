@@ -63,16 +63,18 @@ Zwróć WYŁĄCZNIE czysty JSON.";
             int width,
             int height)
         {
-            var apiKey = _config["Groq:ApiKey"]
-                      ?? _config["GROQ_API_KEY"]
-                      ?? Environment.GetEnvironmentVariable("GROQ_API_KEY");
+            var groqApiKey = _config["Groq:ApiKey"]
+                          ?? _config["GROQ_API_KEY"]
+                          ?? Environment.GetEnvironmentVariable("GROQ_API_KEY");
 
-            if (string.IsNullOrWhiteSpace(apiKey))
+            if (string.IsNullOrWhiteSpace(groqApiKey))
             {
                 return (false, string.Empty, "Brak skonfigurowanego klucza Groq.");
             }
 
-            var safeApiKey = apiKey.Trim();
+            var pollinationsKey = _config["Pollinations:ApiKey"]
+                               ?? _config["POLLINATIONS_API_KEY"]
+                               ?? Environment.GetEnvironmentVariable("POLLINATIONS_API_KEY");
 
             var requestBody = new
             {
@@ -86,7 +88,7 @@ Zwróć WYŁĄCZNIE czysty JSON.";
             };
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", safeApiKey);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", groqApiKey.Trim());
             request.Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
@@ -117,12 +119,12 @@ Zwróć WYŁĄCZNIE czysty JSON.";
             }
 
             var promptText = resultDoc.RootElement.GetProperty("prompt").GetString() ?? itemName;
-
             var encodedPrompt = Uri.EscapeDataString(promptText);
             var negative = Uri.EscapeDataString("nsfw, ugly, dirty, human, face, text, logo, watermark, bad quality, messy");
             var seed = Random.Shared.Next(100000, 999999);
 
-            var finalUrl = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width={width}&height={height}&model=flux&seed={seed}&nologo=true&safe=true&negative={negative}";
+            var keyParam = !string.IsNullOrWhiteSpace(pollinationsKey) ? $"&key={pollinationsKey.Trim()}" : string.Empty;
+            var finalUrl = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width={width}&height={height}&model=turbo&seed={seed}&nologo=true&safe=true&negative={negative}{keyParam}";
 
             return (true, finalUrl, null);
         }
