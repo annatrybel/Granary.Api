@@ -248,59 +248,81 @@ namespace Granary.Api.Services
 
             var recipe = await _context.Recipes
                 .AsNoTracking()
-                .Include(r => r.Translations)
-                .Include(r => r.Ingredients)
-                    .ThenInclude(ri => ri.Product)
-                        .ThenInclude(p => p.Translations)
-                .FirstOrDefaultAsync(r => r.Id == recipeId);
+                .Where(r => r.Id == recipeId)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Title,
+                    r.Instructions,
+                    r.ImageUrl,
+                    r.PrepTimeMinutes,
+                    r.Servings,
+                    r.Calories,
+                    r.CreatedByUserId,
+                    TranslatedTitle = r.Translations
+                        .Where(t => t.LanguageId == targetLangId)
+                        .Select(t => t.Title)
+                        .FirstOrDefault(),
+                    TranslatedInstructions = r.Translations
+                        .Where(t => t.LanguageId == targetLangId)
+                        .Select(t => t.Instructions)
+                        .FirstOrDefault(),
+                    IsFavorite = _context.UserRecipeInteractions
+                        .Any(x => x.UserId == userId && x.RecipeId == r.Id && x.IsFavorite),
+                    UserVote = _context.UserRecipeInteractions
+                        .Where(x => x.UserId == userId && x.RecipeId == r.Id)
+                        .Select(x => x.Vote)
+                        .FirstOrDefault(),
+                    LikesCount = _context.UserRecipeInteractions
+                        .Count(x => x.RecipeId == r.Id && x.Vote == true),
+                    DislikesCount = _context.UserRecipeInteractions
+                        .Count(x => x.RecipeId == r.Id && x.Vote == false),
+                    Ingredients = r.Ingredients.Select(i => new
+                    {
+                        i.ProductId,
+                        ProductName = i.Product.Name,
+                        TranslatedName = i.Product.Translations
+                            .Where(pt => pt.LanguageId == targetLangId)
+                            .Select(pt => pt.Name)
+                            .FirstOrDefault(),
+                        i.Quantity,
+                        i.Unit,
+                        i.IsOptional,
+                        IsOwnedInPantry = _context.PantryItems.Any(pi =>
+                            pi.UserId == userId
+                            && pi.Status == PantryItemStatus.Active
+                            && pi.ProductId == i.ProductId)
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
 
             if (recipe == null)
             {
                 return ServiceResult<RecipeDetailDto>.Failure("Nie znaleziono wybranego przepisu.");
             }
 
-            var ownedProductIds = await _context.PantryItems
-                .AsNoTracking()
-                .Where(pi => pi.UserId == userId && pi.Status == PantryItemStatus.Active)
-                .Select(pi => pi.ProductId)
-                .ToHashSetAsync();
-
-            var userInteraction = await _context.UserRecipeInteractions
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.RecipeId == recipeId);
-
-            var allVotes = await _context.UserRecipeInteractions
-                .AsNoTracking()
-                .Where(x => x.RecipeId == recipeId && x.Vote != null)
-                .Select(x => x.Vote)
-                .ToListAsync();
-
-            var trans = recipe.Translations.FirstOrDefault(t => t.LanguageId == targetLangId);
-
             var detail = new RecipeDetailDto
             {
                 Id = recipe.Id,
-                Title = trans?.Title ?? recipe.Title,
-                Instructions = trans?.Instructions ?? recipe.Instructions,
+                Title = recipe.TranslatedTitle ?? recipe.Title,
+                Instructions = recipe.TranslatedInstructions ?? recipe.Instructions,
                 ImageUrl = recipe.ImageUrl,
                 PrepTimeMinutes = recipe.PrepTimeMinutes,
                 Servings = recipe.Servings,
                 Calories = recipe.Calories,
-                IsFavorite = userInteraction?.IsFavorite ?? false,
+                IsFavorite = recipe.IsFavorite,
                 IsCustom = recipe.CreatedByUserId == userId,
-                LikesCount = allVotes.Count(v => v == true),
-                DislikesCount = allVotes.Count(v => v == false),
-                UserVote = userInteraction?.Vote,
+                LikesCount = recipe.LikesCount,
+                DislikesCount = recipe.DislikesCount,
+                UserVote = recipe.UserVote,
                 Ingredients = recipe.Ingredients.Select(i => new RecipeIngredientDto
                 {
                     ProductId = i.ProductId,
-                    ProductName = i.Product?.Translations.FirstOrDefault(pt => pt.LanguageId == targetLangId)?.Name
-                                  ?? i.Product?.Name
-                                  ?? "Składnik",
+                    ProductName = i.TranslatedName ?? i.ProductName ?? "Składnik",
                     Quantity = i.Quantity,
                     Unit = i.Unit,
                     IsOptional = i.IsOptional,
-                    IsOwnedInPantry = ownedProductIds.Contains(i.ProductId)
+                    IsOwnedInPantry = i.IsOwnedInPantry
                 }).ToList()
             };
 

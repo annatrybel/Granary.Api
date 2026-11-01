@@ -7,7 +7,9 @@ using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace Granary.Api.Services
 {
@@ -17,6 +19,8 @@ namespace Granary.Api.Services
         private readonly ILogger<UserManagementService> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
         private const string ObjectName = "User";
 
@@ -24,12 +28,16 @@ namespace Granary.Api.Services
             GranaryDbContext context,
             ILogger<UserManagementService> logger,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole<Guid>> roleManager)
+            RoleManager<IdentityRole<Guid>> roleManager,
+            IEmailService emailService,
+            IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
             _userManager = userManager;
             _roleManager = roleManager;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
         public async Task<ServiceResult<List<IdentityRole<Guid>>>> GetAllRolesAsync()
@@ -53,22 +61,49 @@ namespace Granary.Api.Services
                 var page = query.Page < 1 ? 1 : query.Page;
                 var pageSize = query.PageSize < 1 ? 10 : query.PageSize;
 
-                string? search = string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim();
+                var now = DateTimeOffset.UtcNow;
 
-                string sortColumn = !string.IsNullOrWhiteSpace(query.SortBy) ? query.SortBy : "UserName";
-                string sortDirection = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
+                var users =
+                    from u in _context.Users.AsNoTracking()
+                    join ur in _context.UserRoles on u.Id equals ur.UserId into userRoles
+                    from ur in userRoles.DefaultIfEmpty()
+                    join r in _context.Roles on ur.RoleId equals r.Id into roles
+                    from r in roles.DefaultIfEmpty()
+                    select new UserDto
+                    {
+                        UserId = u.Id.ToString(),
+                        UserName = u.UserName ?? string.Empty,
+                        Email = u.Email ?? string.Empty,
+                        AvatarUrl = u.AvatarUrl,
+                        RoleId = r == null ? string.Empty : r.Id.ToString(),
+                        RoleName = r == null ? string.Empty : r.Name ?? string.Empty,
+                        IsLocked = u.LockoutEnabled && u.LockoutEnd != null && u.LockoutEnd > now
+                    };
 
-                var filteredUsers = await _context.Set<UserDto>()
-                    .FromSqlInterpolated($"SELECT * FROM public.get_users_with_roles({search}, {sortColumn}, {sortDirection})")
-                    .AsNoTracking()
-                    .ToListAsync();
+                if (!string.IsNullOrWhiteSpace(query.Search))
+                {
+                    var pattern = $"%{EscapeLikePattern(query.Search.Trim())}%";
+                    users = users.Where(u =>
+                        EF.Functions.ILike(u.UserName, pattern, "\\") ||
+                        EF.Functions.ILike(u.Email, pattern, "\\"));
+                }
 
-                var totalCount = filteredUsers.Count;
+                var descending = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+                var ordered = (query.SortBy?.Trim().ToLowerInvariant()) switch
+                {
+                    "email" => descending ? users.OrderByDescending(u => u.Email) : users.OrderBy(u => u.Email),
+                    "rolename" or "role" => descending ? users.OrderByDescending(u => u.RoleName) : users.OrderBy(u => u.RoleName),
+                    "islocked" => descending ? users.OrderByDescending(u => u.IsLocked) : users.OrderBy(u => u.IsLocked),
+                    _ => descending ? users.OrderByDescending(u => u.UserName) : users.OrderBy(u => u.UserName)
+                };
 
-                var pagedItems = filteredUsers
+                var totalCount = await users.CountAsync();
+
+                var pagedItems = await ordered
+                    .ThenBy(u => u.UserId)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .ToList();
+                    .ToListAsync();
 
                 return ServiceResult<PagedResult<UserDto>>.Success(new PagedResult<UserDto>
                 {
@@ -80,10 +115,38 @@ namespace Granary.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching users with roles using function get_users_with_roles: {ErrorDetails}", ex.ToString());
+                _logger.LogError(ex,                 "Error fetching users with roles");
                 return ServiceResult<PagedResult<UserDto>>.Failure(CommonErrors.DataProcessingError("Błąd pobierania listy użytkowników."));
             }
         }
+
+                        private static string EscapeLikePattern(string value) =>
+                            value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+
+                        private static string GenerateRandomPassword()
+                        {
+                            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+                            const string lower = "abcdefghijkmnopqrstuvwxyz";
+                            const string digits = "23456789";
+                            const string symbols = "!@#$%^&*-_=+";
+                            const string all = upper + lower + digits + symbols;
+
+                            var chars = new List<char>
+                            {
+                                upper[RandomNumberGenerator.GetInt32(upper.Length)],
+                                lower[RandomNumberGenerator.GetInt32(lower.Length)],
+                                digits[RandomNumberGenerator.GetInt32(digits.Length)],
+                                symbols[RandomNumberGenerator.GetInt32(symbols.Length)]
+                            };
+
+                            while (chars.Count < 32)
+                            {
+                                chars.Add(all[RandomNumberGenerator.GetInt32(all.Length)]);
+                            }
+
+                            RandomNumberGenerator.Shuffle(CollectionsMarshal.AsSpan(chars));
+                            return new string(chars.ToArray());
+                        }
 
         public async Task<ServiceResult> LockUser(string userId)
         {
@@ -160,7 +223,8 @@ namespace Granary.Api.Services
                     EmailConfirmed = true
                 };
 
-                var createResult = await _userManager.CreateAsync(newUser, "DefaultPassword123!");
+                // Konto dostaje losowe hasło, którego nikt nie zna; użytkownik ustawia własne przez link z e-maila.
+                var createResult = await _userManager.CreateAsync(newUser, GenerateRandomPassword());
                 if (!createResult.Succeeded)
                 {
                     var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
@@ -174,6 +238,17 @@ namespace Granary.Api.Services
                     await transaction.RollbackAsync();
                     var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
                     return ServiceResult<UserDto>.Failure(UserManagementErrors.UpdateFailed("Nie udało się przypisać roli: " + errors));
+                }
+
+                var token = await _userManager.GeneratePasswordResetTokenAsync(newUser);
+                var setupUrl = PasswordLinkBuilder.BuildResetUrl(_configuration, token, newUser.Email!);
+                var emailResult = await _emailService.SendAccountSetupAsync(newUser.Email!, newUser.UserName ?? newUser.Email!, setupUrl);
+                if (!emailResult.IsSuccess)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError("Nie wysłano linku do ustawienia hasła dla {Email}; konto nie zostało utworzone.", user.Email);
+                    return ServiceResult<UserDto>.Failure(UserManagementErrors.CreateFailed(
+                        "Nie udało się wysłać e-maila z linkiem do ustawienia hasła. Konto nie zostało utworzone."));
                 }
 
                 await transaction.CommitAsync();

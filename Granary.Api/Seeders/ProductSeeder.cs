@@ -76,12 +76,6 @@ namespace Granary.Api.Seeders
                         wasModified = true;
                     }
 
-                    if (string.IsNullOrEmpty(existingProduct.Barcode) && !string.IsNullOrEmpty(item.Barcode))
-                    {
-                        existingProduct.Barcode = item.Barcode;
-                        wasModified = true;
-                    }
-
                     if (wasModified) updatedCount++;
                 }
                 else
@@ -93,8 +87,7 @@ namespace Granary.Api.Seeders
                         CategoryId = catId,
                         ImageUrl = item.ImageUrl,
                         DefaultUnit = item.DefaultUnit ?? "szt.",
-                        DefaultShelfLifeDays = item.DefaultShelfLifeDays > 0 ? item.DefaultShelfLifeDays : 7,
-                        Barcode = item.Barcode
+                        DefaultShelfLifeDays = item.DefaultShelfLifeDays > 0 ? item.DefaultShelfLifeDays : 7
                     });
                 }
             }
@@ -119,7 +112,6 @@ namespace Granary.Api.Seeders
             public string? ImageUrl { get; set; }
             public string? DefaultUnit { get; set; }
             public int DefaultShelfLifeDays { get; set; }
-            public string? Barcode { get; set; }
         }
     }
 }

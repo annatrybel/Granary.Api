@@ -7,6 +7,7 @@ namespace Granary.Api.Services.Interfaces
     public interface ICatalogProductService
     {
         Task<ServiceResult<IEnumerable<CatalogProductDto>>> SearchAsync(string? query, Guid? categoryId, bool excludePantry = false, string lang = "pl");
+        Task<ServiceResult<AdminCatalogProductsPageDto>> SearchForAdminAsync(AdminCatalogProductsQueryDto query, string lang = "pl");
         Task<ServiceResult<CatalogProductDto>> GetByIdAsync(Guid id, string lang = "pl");
         Task<ServiceResult<CatalogProductDto>> CreateAsync(CreateOrUpdateCatalogProductDto createDto, Guid? currentUserId = null);
         Task<ServiceResult<CatalogProductDto>> UpdateAsync(Guid id, CreateOrUpdateCatalogProductDto updateDto, Guid? currentUserId = null, bool isAdmin = false);

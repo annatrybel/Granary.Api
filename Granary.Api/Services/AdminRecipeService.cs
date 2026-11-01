@@ -3,7 +3,9 @@ using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Recipes;
 using Granary.Api.Services.Results;
+using Granary.Api.Services.Storage;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace Granary.Api.Services
 {
@@ -12,16 +14,21 @@ namespace Granary.Api.Services
         Task<ServiceResult<AdminRecipeKpisDto>> GetKpisAsync();
         Task<ServiceResult<PagedResult<AdminRecipeListItemDto>>> GetRecipesAsync(AdminRecipeFilterDto filter);
         Task<ServiceResult<bool>> ToggleApprovalAsync(Guid recipeId);
+        Task<ServiceResult<AdminRecipeEditDto>> GetForEditAsync(Guid recipeId);
+        Task<ServiceResult<AdminRecipeEditDto>> CreateAsync(AdminRecipeEditDto dto);
+        Task<ServiceResult<AdminRecipeEditDto>> UpdateAsync(Guid recipeId, AdminRecipeEditDto dto);
         Task<ServiceResult<bool>> DeleteAsync(Guid recipeId);
     }
 
     public class AdminRecipeService : IAdminRecipeService
     {
         private readonly GranaryDbContext _context;
+        private readonly IFileStorageService _fileStorageService;
 
-        public AdminRecipeService(GranaryDbContext context)
+        public AdminRecipeService(GranaryDbContext context, IFileStorageService fileStorageService)
         {
             _context = context;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<ServiceResult<AdminRecipeKpisDto>> GetKpisAsync()
@@ -111,6 +118,139 @@ namespace Granary.Api.Services
             await _context.SaveChangesAsync();
             return ServiceResult<bool>.Success(recipe.CreatedByUserId == null);
         }
+
+        public async Task<ServiceResult<AdminRecipeEditDto>> GetForEditAsync(Guid recipeId)
+        {
+            var recipe = await _context.Recipes
+                .AsNoTracking()
+                .Include(r => r.Ingredients)
+                    .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(r => r.Id == recipeId);
+
+            if (recipe == null) return ServiceResult<AdminRecipeEditDto>.Failure("Przepis nie istnieje.");
+
+            return ServiceResult<AdminRecipeEditDto>.Success(new AdminRecipeEditDto
+            {
+                Id = recipe.Id,
+                Title = recipe.Title,
+                ImageUrl = recipe.ImageUrl,
+                Servings = recipe.Servings,
+                PrepTimeMinutes = recipe.PrepTimeMinutes,
+                Calories = recipe.Calories,
+                Steps = SplitSteps(recipe.Instructions),
+                Ingredients = recipe.Ingredients
+                    .OrderBy(i => i.Product.Name)
+                    .Select(i => new AdminRecipeIngredientDto
+                    {
+                        ProductId = i.ProductId,
+                        ProductName = i.Product.Name,
+                        Quantity = i.Quantity,
+                        Unit = i.Unit,
+                        IsOptional = i.IsOptional
+                    })
+                    .ToList()
+            });
+        }
+
+        public async Task<ServiceResult<AdminRecipeEditDto>> CreateAsync(AdminRecipeEditDto dto)
+        {
+            var validationError = await ValidateAsync(dto);
+            if (validationError != null) return ServiceResult<AdminRecipeEditDto>.Failure(validationError);
+
+            var recipe = new Recipe
+            {
+                Id = Guid.NewGuid(),
+                CreatedByUserId = null,
+                CreatedAt = DateTime.UtcNow,
+                ImageUrl = await _fileStorageService.ProcessImageAsync(dto.ImageUrl, null, "recipes")
+            };
+
+            ApplyContent(recipe, dto);
+            foreach (var ingredient in BuildIngredients(recipe.Id, dto)) recipe.Ingredients.Add(ingredient);
+
+            _context.Recipes.Add(recipe);
+            await _context.SaveChangesAsync();
+
+            return await GetForEditAsync(recipe.Id);
+        }
+
+        public async Task<ServiceResult<AdminRecipeEditDto>> UpdateAsync(Guid recipeId, AdminRecipeEditDto dto)
+        {
+            var validationError = await ValidateAsync(dto);
+            if (validationError != null) return ServiceResult<AdminRecipeEditDto>.Failure(validationError);
+
+            var recipe = await _context.Recipes
+                .Include(r => r.Ingredients)
+                .Include(r => r.Translations)
+                .FirstOrDefaultAsync(r => r.Id == recipeId);
+
+            if (recipe == null) return ServiceResult<AdminRecipeEditDto>.Failure("Przepis nie istnieje.");
+
+            var previousTitle = recipe.Title;
+            var previousInstructions = recipe.Instructions;
+
+            recipe.ImageUrl = await _fileStorageService.ProcessImageAsync(dto.ImageUrl, recipe.ImageUrl, "recipes");
+            ApplyContent(recipe, dto);
+
+            // Zmiana treści unieważnia automatyczne tłumaczenia, które zostaną wygenerowane ponownie.
+            if (recipe.Title != previousTitle || recipe.Instructions != previousInstructions)
+            {
+                _context.RecipeTranslations.RemoveRange(recipe.Translations);
+            }
+
+            _context.RecipeIngredients.RemoveRange(recipe.Ingredients);
+            _context.RecipeIngredients.AddRange(BuildIngredients(recipe.Id, dto));
+
+            await _context.SaveChangesAsync();
+
+            return await GetForEditAsync(recipe.Id);
+        }
+
+        private async Task<string?> ValidateAsync(AdminRecipeEditDto dto)
+        {
+            if (!dto.Steps.Any(s => !string.IsNullOrWhiteSpace(s)))
+                return "Przepis musi zawierać co najmniej jeden krok przygotowania.";
+
+            if (dto.Ingredients.Count == 0)
+                return "Przepis musi zawierać co najmniej jeden składnik.";
+
+            var productIds = dto.Ingredients.Select(i => i.ProductId).ToList();
+            if (productIds.Distinct().Count() != productIds.Count)
+                return "Ten sam składnik został dodany więcej niż raz.";
+
+            var existingCount = await _context.Products.CountAsync(p => productIds.Contains(p.Id));
+            if (existingCount != productIds.Count)
+                return "Jeden ze składników nie istnieje już w katalogu produktów.";
+
+            return null;
+        }
+
+        private static void ApplyContent(Recipe recipe, AdminRecipeEditDto dto)
+        {
+            recipe.Title = dto.Title.Trim();
+            recipe.Instructions = string.Join("\n", dto.Steps.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()));
+            recipe.Servings = dto.Servings;
+            recipe.PrepTimeMinutes = dto.PrepTimeMinutes;
+            recipe.Calories = dto.Calories;
+        }
+
+        private static IEnumerable<RecipeIngredient> BuildIngredients(Guid recipeId, AdminRecipeEditDto dto) =>
+            dto.Ingredients.Select(i => new RecipeIngredient
+            {
+                Id = Guid.NewGuid(),
+                RecipeId = recipeId,
+                ProductId = i.ProductId,
+                Quantity = i.Quantity,
+                Unit = i.Unit.Trim(),
+                IsOptional = i.IsOptional
+            });
+
+        private static List<string> SplitSteps(string instructions) =>
+            instructions
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => Regex.Replace(s, @"^\d+[\.\)]\s*", string.Empty).Trim())
+                .Where(s => s.Length > 0)
+                .ToList();
 
         public async Task<ServiceResult<bool>> DeleteAsync(Guid recipeId)
         {

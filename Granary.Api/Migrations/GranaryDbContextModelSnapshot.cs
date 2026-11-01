@@ -359,10 +359,6 @@ namespace Granary.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Barcode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
@@ -389,8 +385,6 @@ namespace Granary.Api.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Barcode");
 
                     b.HasIndex("CategoryId");
 

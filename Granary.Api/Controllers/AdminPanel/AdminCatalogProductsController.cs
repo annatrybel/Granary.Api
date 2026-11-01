@@ -1,4 +1,5 @@
 ﻿using Granary.Api.Models.Dto;
+using Granary.Api.Models.Dto.Catalog;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,12 +20,13 @@ namespace Granary.Api.Controllers.AdminPanel
         }
 
         /// <summary>
-        /// Pobiera/Przeszukuje całą bazę produktów dla panelu administratora.
+        /// Pobiera stronę produktów z całego katalogu (łącznie z produktami użytkowników) dla panelu administratora.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? query, [FromQuery] Guid? categoryId, [FromQuery] bool excludePantry = false) 
+        [ProducesResponseType(typeof(AdminCatalogProductsPageDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAll([FromQuery] AdminCatalogProductsQueryDto query)
         {
-            var result = await _catalogService.SearchAsync(query, categoryId, excludePantry);
+            var result = await _catalogService.SearchForAdminAsync(query);
             return HandleServiceResult(result);
         }
 

@@ -93,15 +93,22 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
+        [HttpGet("push-public-key")]
+        public IActionResult GetPushPublicKey([FromServices] IConfiguration configuration)
+        {
+            var key = configuration["VAPID_PUBLIC_KEY"];
+            return string.IsNullOrEmpty(key) ? NotFound() : Ok(new { publicKey = key });
+        }
+
         [HttpPost("push-subscription")]
         public async Task<IActionResult> SavePushSubscription([FromBody] PushSubscriptionDto dto, [FromServices] GranaryDbContext db)
         {
             var userId = User.GetUserId();
 
-            var exists = await db.DevicePushSubscriptions
-                .AnyAsync(s => s.UserId == userId && s.Endpoint == dto.Endpoint);
+            var existing = await db.DevicePushSubscriptions
+                .FirstOrDefaultAsync(s => s.UserId == userId && s.Endpoint == dto.Endpoint);
 
-            if (!exists)
+            if (existing is null)
             {
                 db.DevicePushSubscriptions.Add(new DevicePushSubscription
                 {
@@ -110,9 +117,14 @@ namespace Granary.Api.Controllers.Mobile
                     P256dh = dto.P256dh,
                     Auth = dto.Auth
                 });
-                await db.SaveChangesAsync();
+            }
+            else
+            {
+                existing.P256dh = dto.P256dh;
+                existing.Auth = dto.Auth;
             }
 
+            await db.SaveChangesAsync();
             return NoContent();
         }
     }

@@ -36,6 +36,32 @@ namespace Granary.Api.Controllers.AdminPanel
             return HandleServiceResult(result);
         }
 
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(AdminRecipeEditDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetForEdit([FromRoute] Guid id)
+        {
+            var result = await _recipeService.GetForEditAsync(id);
+            return HandleServiceResult(result);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(typeof(AdminRecipeEditDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Create([FromBody] AdminRecipeEditDto dto)
+        {
+            var result = await _recipeService.CreateAsync(dto);
+            return HandleServiceResult(result);
+        }
+
+        [HttpPut("{id:guid}")]
+        [ProducesResponseType(typeof(AdminRecipeEditDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] AdminRecipeEditDto dto)
+        {
+            var result = await _recipeService.UpdateAsync(id, dto);
+            return HandleServiceResult(result);
+        }
+
         [HttpPost("{id}/toggle-approval")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> ToggleApproval([FromRoute] Guid id)

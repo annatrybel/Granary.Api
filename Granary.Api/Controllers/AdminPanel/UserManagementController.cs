@@ -53,7 +53,8 @@ namespace Granary.Api.Controllers.Admin
         /// Tworzy nowego użytkownika administracyjnie.
         /// </summary>
         /// <remarks>
-        /// Domyślnie ustawia hasło 'DefaultPassword123!'. Przypisuje wskazaną rolę.
+        /// Konto powstaje z losowym hasłem, a użytkownik dostaje e-mail z linkiem do ustawienia własnego hasła (ważnym 24 h).
+        /// Jeśli wysyłka e-maila się nie powiedzie, konto nie zostaje utworzone. Przypisuje wskazaną rolę.
         /// Zwykły administrator nie może utworzyć super-admina, chyba że jest to jawnie zablokowane logiką serwisu.
         /// </remarks>
         [HttpPost("create-user")]

@@ -48,6 +48,7 @@ namespace Granary.Api.Services
                 {
                     Id = pi.Id,
                     ProductId = pi.ProductId,
+                    IsCustom = pi.Product.CreatedByUserId == userId,
                     ProductName = pi.Product.Translations
                         .Where(t => t.Language.Code == lang)
                         .Select(t => t.Name)
@@ -81,6 +82,7 @@ namespace Granary.Api.Services
                 {
                     Id = pi.Id,
                     ProductId = pi.ProductId,
+                    IsCustom = pi.Product.CreatedByUserId == userId,
                     ProductName = pi.Product.Translations
                         .Where(t => t.Language.Code == lang)
                         .Select(t => t.Name)

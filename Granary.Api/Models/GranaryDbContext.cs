@@ -64,8 +64,6 @@ namespace Granary.Api.Models
                 .HasOperators("gin_trgm_ops");
 
             
-            modelBuilder.Entity<Product>()
-                .HasIndex(p => p.Barcode);
             modelBuilder.Entity<PantryItem>()
                 .HasIndex(p => new { p.UserId, p.ExpirationDate });
             modelBuilder.Entity<PantryItem>()

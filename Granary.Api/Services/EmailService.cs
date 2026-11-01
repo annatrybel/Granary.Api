@@ -161,6 +161,36 @@ namespace Granary.Api.Services
 
         #endregion
 
+        #region Konta Utworzone Przez Administratora
+
+        public async Task<ServiceResult> SendAccountSetupAsync(string recipientEmail, string userName, string setupUrl)
+        {
+            try
+            {
+                string templatePath = ResolveTemplatePath("AccountSetupEmail.html");
+                if (!File.Exists(templatePath))
+                {
+                    _logger.LogError("Nie znaleziono szablonu email: {TemplatePath}", templatePath);
+                    return ServiceResult.Failure("Błąd szablonu wiadomości.");
+                }
+
+                string body = await File.ReadAllTextAsync(templatePath);
+                body = body.Replace("{UserName}", WebUtility.HtmlEncode(userName));
+                body = body.Replace("{SetupUrl}", WebUtility.HtmlEncode(setupUrl));
+
+                await _emailSender.SendEmailAsync(recipientEmail, "Smart Pantry - ustaw hasło do swojego konta", body);
+                _logger.LogInformation("Wysłano link do ustawienia hasła na adres {RecipientEmail}", recipientEmail);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd wysyłania linku do ustawienia hasła na adres {RecipientEmail}", recipientEmail);
+                return ServiceResult.Failure(EmailError.SendFailed());
+            }
+        }
+
+        #endregion
+
         #region Powiadomienia o Wygasających Produktach (Zero-Waste Alert)
 
         public async Task<ServiceResult> SendExpiringProductsAlertAsync(

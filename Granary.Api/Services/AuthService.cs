@@ -209,17 +209,7 @@ namespace Granary.Api.Services
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-            var frontEndBaseUrl = _configuration["FRONTEND_BASE_URL"];
-            if (string.IsNullOrEmpty(frontEndBaseUrl))
-            {
-                Console.WriteLine("OSTRZEŻENIE: Brak konfiguracji FRONTEND_BASE_URL. Używam domyślnego adresu 'http://localhost:3000'.");
-                frontEndBaseUrl = "http://localhost:3000";
-            }
-
-            var encodedToken = WebUtility.UrlEncode(token);
-            var encodedEmail = WebUtility.UrlEncode(user.Email);
-
-            var callbackUrl = $"{frontEndBaseUrl}/reset-password?token={encodedToken}&email={encodedEmail}";
+            var callbackUrl = PasswordLinkBuilder.BuildResetUrl(_configuration, token, user.Email!);
 
             var templatePath = Path.Combine(_hostingEnvironment.ContentRootPath, "Templates", "ForgotPasswordEmail.html");
             var emailBody = await File.ReadAllTextAsync(templatePath);

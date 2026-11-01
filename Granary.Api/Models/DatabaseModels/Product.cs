@@ -18,9 +18,6 @@ namespace Granary.Api.Models.DatabaseModels
         [Required, MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
-        [MaxLength(50)]
-        public string? Barcode { get; set; }
-
         public string? ImageUrl { get; set; }
 
         [Required, MaxLength(20)]

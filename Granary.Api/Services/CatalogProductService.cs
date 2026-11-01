@@ -9,6 +9,7 @@ using Granary.Api.Services.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Granary.Api.Extensions;
+using Granary.Api.Services.Storage;
 using System.Linq.Expressions;
 
 namespace Granary.Api.Services.Catalog
@@ -19,24 +20,26 @@ namespace Granary.Api.Services.Catalog
         private readonly ILogger<CatalogProductService> _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IMemoryCache _cache;
+        private readonly IFileStorageService _fileStorageService;
 
         public CatalogProductService(
             GranaryDbContext dbContext,
             ILogger<CatalogProductService> logger,
             ICurrentUserService currentUserService,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IFileStorageService fileStorageService)
         {
             _dbContext = dbContext;
             _logger = logger;
             _currentUserService = currentUserService;
             _cache = cache;
+            _fileStorageService = fileStorageService;
         }
 
         private static Expression<Func<Product, CatalogProductDto>> CreateDtoSelector(Guid targetLangId) => p => new CatalogProductDto
         {
             Id = p.Id,
             Name = p.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Name,
-            Barcode = p.Barcode,
             ImageUrl = p.ImageUrl,
             DefaultUnit = p.Translations.Where(t => t.LanguageId == targetLangId && t.Unit != null).Select(t => t.Unit).FirstOrDefault() ?? p.DefaultUnit,
             DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
@@ -78,10 +81,8 @@ namespace Granary.Api.Services.Catalog
             if (!string.IsNullOrWhiteSpace(query))
             {
                 var pattern = query.Trim().ToContainsPattern();
-                var barcode = query.Trim();
                 dbQuery = dbQuery.Where(p =>
                     EF.Functions.ILike(p.Name, pattern) ||
-                    (p.Barcode != null && p.Barcode.Contains(barcode)) ||
                     p.Translations.Any(t => t.LanguageId == targetLangId && EF.Functions.ILike(t.Name, pattern))
                 );
             }
@@ -97,6 +98,73 @@ namespace Granary.Api.Services.Catalog
                 .ToListAsync();
 
             return ServiceResult<IEnumerable<CatalogProductDto>>.Success(results);
+        }
+
+        public async Task<ServiceResult<AdminCatalogProductsPageDto>> SearchForAdminAsync(AdminCatalogProductsQueryDto query, string lang = "pl")
+        {
+            const int maxPageSize = 100;
+            var page = Math.Max(query.Page, 1);
+            var pageSize = Math.Clamp(query.PageSize, 1, maxPageSize);
+
+            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+            var targetLangId = await _cache.GetLanguageIdAsync(
+                _dbContext, $"lang:catalog:{normalizedLang}",
+                l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
+
+            var products = _dbContext.Products.AsNoTracking();
+
+            if (query.CategoryId.HasValue && query.CategoryId.Value != Guid.Empty)
+            {
+                products = products.Where(p => p.CategoryId == query.CategoryId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var search = query.Search.Trim();
+                var pattern = search.ToContainsPattern();
+                products = products.Where(p =>
+                    EF.Functions.ILike(p.Name, pattern) ||
+                    p.Translations.Any(t => EF.Functions.ILike(t.Name, pattern)));
+            }
+
+            var descending = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+            var ordered = (query.SortBy?.Trim().ToLowerInvariant()) switch
+            {
+                "shelflife" => descending ? products.OrderByDescending(p => p.DefaultShelfLifeDays) : products.OrderBy(p => p.DefaultShelfLifeDays),
+                "category" => descending ? products.OrderByDescending(p => p.Category.Name) : products.OrderBy(p => p.Category.Name),
+                _ => descending ? products.OrderByDescending(p => p.Name) : products.OrderBy(p => p.Name)
+            };
+
+            var totalCount = await products.CountAsync();
+
+            // Admin edytuje dane bazowe produktu, więc nazwa i jednostka nie są podmieniane tłumaczeniem.
+            var items = await ordered
+                .ThenBy(p => p.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new CatalogProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    ImageUrl = p.ImageUrl,
+                    DefaultUnit = p.DefaultUnit,
+                    DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
+                    CategoryId = p.CategoryId,
+                    CategoryName = p.Category.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Category.Name,
+                    CreatedByUserId = p.CreatedByUserId
+                })
+                .ToListAsync();
+
+            var customCount = await _dbContext.Products.CountAsync(p => p.CreatedByUserId != null);
+
+            return ServiceResult<AdminCatalogProductsPageDto>.Success(new AdminCatalogProductsPageDto
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                CustomProductsCount = customCount
+            });
         }
 
         public async Task<ServiceResult<CatalogProductDto>> GetByIdAsync(Guid id, string lang = "pl")
@@ -124,31 +192,6 @@ namespace Granary.Api.Services.Catalog
             return ServiceResult<CatalogProductDto>.Success(product);
         }
 
-        public async Task<ServiceResult<CatalogProductDto>> GetByBarcodeAsync(string barcode, string lang = "pl")
-        {
-            var normalizedLang = (lang ?? "pl").Trim().ToLower();
-            var targetLang = await _dbContext.Languages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
-            var targetLangId = targetLang?.Id ?? Guid.Empty;
-
-            var product = await _dbContext.Products
-                .AsNoTracking()
-                .Include(p => p.Translations)
-                .Include(p => p.Category)
-                    .ThenInclude(c => c.Translations)
-                .Where(p => p.Barcode == barcode)
-                .Select(CreateDtoSelector(targetLangId))
-                .FirstOrDefaultAsync();
-
-            if (product == null)
-            {
-                return ServiceResult<CatalogProductDto>.Failure($"Produkt o kodzie kreskowym '{barcode}' nie został znaleziony.");
-            }
-
-            return ServiceResult<CatalogProductDto>.Success(product);
-        }
-
         public async Task<ServiceResult<CatalogProductDto>> CreateAsync(CreateOrUpdateCatalogProductDto createDto, Guid? currentUserId = null)
         {
             var categoryExists = await _dbContext.Categories.AnyAsync(c => c.Id == createDto.CategoryId);
@@ -157,22 +200,14 @@ namespace Granary.Api.Services.Catalog
                 return ServiceResult<CatalogProductDto>.Failure("Wskazana kategoria nie istnieje.");
             }
 
-            if (!string.IsNullOrWhiteSpace(createDto.Barcode))
-            {
-                var barcodeExists = await _dbContext.Products.AnyAsync(p => p.Barcode == createDto.Barcode);
-                if (barcodeExists)
-                {
-                    return ServiceResult<CatalogProductDto>.Failure($"Produkt z kodem kreskowym '{createDto.Barcode}' już istnieje w bazie.");
-                }
-            }
+            var imageUrl = await _fileStorageService.ProcessImageAsync(createDto.ImageUrl, null, "products");
 
             var product = new Product
             {
                 Id = Guid.NewGuid(),
                 CategoryId = createDto.CategoryId,
-                Name = createDto.Name,
-                Barcode = createDto.Barcode,
-                ImageUrl = createDto.ImageUrl,
+                Name = createDto.Name.Trim(),
+                ImageUrl = imageUrl,
                 DefaultUnit = createDto.DefaultUnit ?? "szt.",
                 DefaultShelfLifeDays = createDto.DefaultShelfLifeDays,
                 CreatedByUserId = currentUserId
@@ -218,9 +253,8 @@ namespace Granary.Api.Services.Catalog
             }
 
             product.CategoryId = updateDto.CategoryId;
-            product.Name = updateDto.Name;
-            product.Barcode = updateDto.Barcode;
-            product.ImageUrl = updateDto.ImageUrl;
+            product.Name = updateDto.Name.Trim();
+            product.ImageUrl = await _fileStorageService.ProcessImageAsync(updateDto.ImageUrl, product.ImageUrl, "products");
             product.DefaultUnit = updateDto.DefaultUnit ?? "szt.";
             product.DefaultShelfLifeDays = updateDto.DefaultShelfLifeDays;
 

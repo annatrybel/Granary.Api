@@ -17,7 +17,7 @@ namespace Granary.Api.Models.Dto.Users
         public string RoleId { get; set; } = string.Empty;
         public string RoleName { get; set; } = string.Empty;
         public bool IsLocked { get; set; }
-        public string InvitationCode { get; set; }
+        public string InvitationCode { get; set; } = string.Empty;
         public List<IdentityRole> AvailableRoles { get; set; } = new List<IdentityRole>();
     }
 }
