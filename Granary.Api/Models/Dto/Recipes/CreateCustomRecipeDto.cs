@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Granary.Api.Models.Enums;
 
 namespace Granary.Api.Models.Dto.Recipes
 {
@@ -6,8 +7,6 @@ namespace Granary.Api.Models.Dto.Recipes
     {
         [Required(ErrorMessage = "Nazwa przepisu jest wymagana."), MaxLength(200)]
         public string Title { get; set; } = string.Empty;
-
-        public string? Category { get; set; }
 
         public string? ImageUrl { get; set; }
 
@@ -17,6 +16,9 @@ namespace Granary.Api.Models.Dto.Recipes
         [Range(1, 1440, ErrorMessage = "Czas przygotowania musi wynosić co najmniej 1 minutę.")]
         public int PrepTimeMinutes { get; set; } = 15;
         public int? Calories { get; set; }
+
+        [EnumDataType(typeof(DietaryPreference))]
+        public DietaryPreference DietaryPreference { get; set; } = DietaryPreference.Standard;
 
         public List<CreateRecipeIngredientDto> Ingredients { get; set; } = new();
 

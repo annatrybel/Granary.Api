@@ -42,6 +42,9 @@ namespace Granary.Api.Migrations
                     b.Property<bool>("DarkMode")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("DietaryPreference")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -215,60 +218,6 @@ namespace Granary.Api.Migrations
                     b.ToTable("Languages");
                 });
 
-            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal?>("OptimizationScore")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("MealPlans");
-                });
-
-            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlanRecipe", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MealPlanId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("MealType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateOnly>("PlannedDate")
-                        .HasColumnType("date");
-
-                    b.Property<Guid>("RecipeId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MealPlanId");
-
-                    b.HasIndex("RecipeId");
-
-                    b.ToTable("MealPlanRecipes");
-                });
-
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -325,6 +274,9 @@ namespace Granary.Api.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -349,6 +301,8 @@ namespace Granary.Api.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("UserId", "ExpirationDate");
+
+                    b.HasIndex("UserId", "ResolvedAt");
 
                     b.ToTable("PantryItems");
                 });
@@ -450,6 +404,9 @@ namespace Granary.Api.Migrations
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("DietaryPreference")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
@@ -864,36 +821,6 @@ namespace Granary.Api.Migrations
                     b.Navigation("Language");
                 });
 
-            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlan", b =>
-                {
-                    b.HasOne("Granary.Api.Models.DatabaseModels.ApplicationUser", "User")
-                        .WithMany("MealPlans")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlanRecipe", b =>
-                {
-                    b.HasOne("Granary.Api.Models.DatabaseModels.MealPlan", "MealPlan")
-                        .WithMany("MealPlanRecipes")
-                        .HasForeignKey("MealPlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Granary.Api.Models.DatabaseModels.Recipe", "Recipe")
-                        .WithMany("MealPlanRecipes")
-                        .HasForeignKey("RecipeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MealPlan");
-
-                    b.Navigation("Recipe");
-                });
-
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Notification", b =>
                 {
                     b.HasOne("Granary.Api.Models.DatabaseModels.PantryItem", "PantryItem")
@@ -1126,8 +1053,6 @@ namespace Granary.Api.Migrations
                 {
                     b.Navigation("CreatedRecipes");
 
-                    b.Navigation("MealPlans");
-
                     b.Navigation("PantryItems");
                 });
 
@@ -1143,11 +1068,6 @@ namespace Granary.Api.Migrations
                     b.Navigation("Translations");
                 });
 
-            modelBuilder.Entity("Granary.Api.Models.DatabaseModels.MealPlan", b =>
-                {
-                    b.Navigation("MealPlanRecipes");
-                });
-
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Product", b =>
                 {
                     b.Navigation("PantryItems");
@@ -1160,8 +1080,6 @@ namespace Granary.Api.Migrations
             modelBuilder.Entity("Granary.Api.Models.DatabaseModels.Recipe", b =>
                 {
                     b.Navigation("Ingredients");
-
-                    b.Navigation("MealPlanRecipes");
 
                     b.Navigation("Translations");
                 });

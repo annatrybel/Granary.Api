@@ -1,6 +1,7 @@
 ﻿using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Profile;
+using Granary.Api.Models.Enums;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Granary.Api.Services.Storage;
@@ -50,7 +51,8 @@ namespace Granary.Api.Services
                 Email = user.Email ?? string.Empty,
                 AvatarUrl = user.AvatarUrl,
                 DarkMode = user.DarkMode,
-                Language = user.Language
+                Language = user.Language,
+                DietaryPreference = user.DietaryPreference
             };
 
             return ServiceResult<UserProfileDto>.Success(dto);
@@ -126,6 +128,28 @@ namespace Granary.Api.Services
             if (!result.Succeeded)
             {
                 return ServiceResult<bool>.Failure("Nie udało się zaktualizować języka.");
+            }
+
+            return ServiceResult<bool>.Success(true);
+        }
+
+        public async Task<ServiceResult<bool>> UpdateDietaryPreferenceAsync(DietaryPreference dietaryPreference)
+        {
+            if (!Enum.IsDefined(typeof(DietaryPreference), dietaryPreference))
+            {
+                return ServiceResult<bool>.Failure("Nieprawidłowa preferencja dietetyczna.");
+            }
+
+            var userId = _currentUserService.UserId;
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null) return ServiceResult<bool>.Failure("Użytkownik nie istnieje.");
+
+            user.DietaryPreference = dietaryPreference;
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                return ServiceResult<bool>.Failure("Nie udało się zaktualizować preferencji dietetycznej.");
             }
 
             return ServiceResult<bool>.Success(true);

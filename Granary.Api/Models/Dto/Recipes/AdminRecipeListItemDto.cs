@@ -7,7 +7,6 @@
         public string Title { get; set; } = string.Empty;
         public string? Subtitle { get; set; } 
         public string? ImageUrl { get; set; }
-        public string Category { get; set; } = "Obiad"; 
         public List<string> MainIngredients { get; set; } = new();
         public int ExtraIngredientsCount { get; set; }
         public int PrepTimeMinutes { get; set; }

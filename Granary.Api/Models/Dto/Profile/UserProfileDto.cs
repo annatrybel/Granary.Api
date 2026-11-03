@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Granary.Api.Models.Enums;
 
 namespace Granary.Api.Models.Dto.Profile
 {
@@ -10,11 +11,14 @@ namespace Granary.Api.Models.Dto.Profile
         public string? AvatarUrl { get; set; }
         public bool DarkMode { get; set; }
         public string? Language { get; set; }
+        public DietaryPreference DietaryPreference { get; set; } = DietaryPreference.Standard;
     }
 
     public record UpdateDarkModeDto(bool DarkMode);
 
     public record UpdateLanguageDto(string Language);
+
+    public record UpdateDietaryPreferenceDto(DietaryPreference DietaryPreference);
    
     public record SendInvitationRequestDto(string RecipientEmail, string PantryName);
 }

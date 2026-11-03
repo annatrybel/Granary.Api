@@ -73,6 +73,11 @@ namespace Granary.Api.Services
                     r.Ingredients.Any(i => i.Product.Name.ToLower().Contains(s)));
             }
 
+            if (filter.Diet.HasValue)
+            {
+                query = query.Where(r => r.DietaryPreference == filter.Diet.Value);
+            }
+
             var totalCount = await query.CountAsync();
 
             var items = await query
@@ -86,7 +91,6 @@ namespace Granary.Api.Services
                     Title = r.Title,
                     Subtitle = "Kuchnia wzorcowa",
                     ImageUrl = r.ImageUrl,
-                    Category = r.PrepTimeMinutes <= 15 ? "Śniadanie" : (r.PrepTimeMinutes >= 35 ? "Wypieki" : "Obiad"),
                     MainIngredients = r.Ingredients.Take(3).Select(i => i.Product.Name).ToList(),
                     ExtraIngredientsCount = Math.Max(0, r.Ingredients.Count - 3),
                     PrepTimeMinutes = r.PrepTimeMinutes,

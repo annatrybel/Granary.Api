@@ -90,6 +90,39 @@ namespace Granary.Api.Services
                 .AsNoTracking()
                 .AsQueryable();
 
+            var targetDiet = filter.Diet;
+
+            if (!targetDiet.HasValue)
+            {
+                targetDiet = await _context.Users
+                    .Where(u => u.Id == userId)
+                    .Select(u => (DietaryPreference?)u.DietaryPreference)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (targetDiet.HasValue && targetDiet.Value != DietaryPreference.Standard)
+            {
+                recipesQuery = targetDiet.Value switch
+                {
+                    DietaryPreference.Vegan =>
+                        recipesQuery.Where(r => r.DietaryPreference == DietaryPreference.Vegan),
+
+                    DietaryPreference.Vegetarian =>
+                        recipesQuery.Where(r => r.DietaryPreference == DietaryPreference.Vegetarian
+                                             || r.DietaryPreference == DietaryPreference.Vegan),
+
+                    DietaryPreference.Pescetarian =>
+                        recipesQuery.Where(r => r.DietaryPreference == DietaryPreference.Pescetarian
+                                             || r.DietaryPreference == DietaryPreference.Vegetarian
+                                             || r.DietaryPreference == DietaryPreference.Vegan),
+
+                    DietaryPreference.Keto =>
+                        recipesQuery.Where(r => r.DietaryPreference == DietaryPreference.Keto),
+
+                    _ => recipesQuery
+                };
+            }
+
             if (hasSelectedItemsFilter)
             {
                 recipesQuery = recipesQuery.Where(r => r.Ingredients.Any(i => targetProductIds.Contains(i.ProductId)));
@@ -117,7 +150,6 @@ namespace Granary.Api.Services
                 recipesQuery = recipesQuery.Where(r => r.PrepTimeMinutes <= filter.MaxTime.Value);
             }
 
-            // Projekcja pobiera tylko pola potrzebne do dopasowania i tylko tłumaczenia w wybranym języku.
             var matchingRecipes = await recipesQuery
                 .Select(r => new
                 {
@@ -127,6 +159,7 @@ namespace Granary.Api.Services
                     r.PrepTimeMinutes,
                     r.Servings,
                     r.Calories,
+                    r.DietaryPreference,
                     r.CreatedByUserId,
                     TranslatedTitle = r.Translations
                         .Where(t => t.LanguageId == targetLangId)
@@ -192,6 +225,7 @@ namespace Granary.Api.Services
                         PrepTimeMinutes = recipe.PrepTimeMinutes,
                         Servings = recipe.Servings,
                         Calories = recipe.Calories,
+                        DietaryPreference = recipe.DietaryPreference,
                         MatchPercentage = matchPct,
                         OwnedIngredientsCount = ownedCount,
                         TotalIngredientsCount = totalCount,
@@ -229,12 +263,12 @@ namespace Granary.Api.Services
             }
 
             var list = sorted.ToList();
-            var totalCount = list.Count;
+            var totalFilteredCount = list.Count;
 
             return ServiceResult<PagedResult<RecipeMatchDto>>.Success(new PagedResult<RecipeMatchDto>
             {
                 Items = list.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
-                TotalCount = totalCount,
+                TotalCount = totalFilteredCount,
                 Page = page,
                 PageSize = pageSize
             });
@@ -258,6 +292,7 @@ namespace Granary.Api.Services
                     r.PrepTimeMinutes,
                     r.Servings,
                     r.Calories,
+                    r.DietaryPreference,
                     r.CreatedByUserId,
                     TranslatedTitle = r.Translations
                         .Where(t => t.LanguageId == targetLangId)
@@ -310,6 +345,7 @@ namespace Granary.Api.Services
                 PrepTimeMinutes = recipe.PrepTimeMinutes,
                 Servings = recipe.Servings,
                 Calories = recipe.Calories,
+                DietaryPreference = recipe.DietaryPreference,
                 IsFavorite = recipe.IsFavorite,
                 IsCustom = recipe.CreatedByUserId == userId,
                 LikesCount = recipe.LikesCount,
@@ -441,6 +477,7 @@ namespace Granary.Api.Services
                 PrepTimeMinutes = dto.PrepTimeMinutes > 0 ? dto.PrepTimeMinutes : 15,
                 Servings = dto.Servings > 0 ? dto.Servings : 1,
                 Calories = dto.Calories,
+                DietaryPreference = dto.DietaryPreference,
                 CreatedByUserId = userId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -502,6 +539,7 @@ namespace Granary.Api.Services
                 PrepTimeMinutes = recipe.PrepTimeMinutes,
                 Servings = recipe.Servings,
                 Calories = recipe.Calories,
+                DietaryPreference = recipe.DietaryPreference,
                 IsFavorite = true,
                 LikesCount = 0,
                 DislikesCount = 0,
@@ -581,6 +619,7 @@ namespace Granary.Api.Services
             recipe.PrepTimeMinutes = dto.PrepTimeMinutes > 0 ? dto.PrepTimeMinutes : recipe.PrepTimeMinutes;
             recipe.Servings = dto.Servings > 0 ? dto.Servings : recipe.Servings;
             recipe.Calories = dto.Calories;
+            recipe.DietaryPreference = dto.DietaryPreference;
 
             var oldIngredients = await _context.RecipeIngredients.Where(ri => ri.RecipeId == recipeId).ToListAsync();
             _context.RecipeIngredients.RemoveRange(oldIngredients);

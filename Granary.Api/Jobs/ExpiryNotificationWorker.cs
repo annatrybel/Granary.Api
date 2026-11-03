@@ -1,5 +1,6 @@
 ﻿using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
+using Granary.Api.Models.Enums;
 using Granary.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,7 +48,7 @@ public class ExpiryNotificationWorker : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<GranaryDbContext>();
-        var webPushService = scope.ServiceProvider.GetRequiredService<IWebPushService>(); 
+        var webPushService = scope.ServiceProvider.GetRequiredService<IWebPushService>();
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var thresholdDate = today.AddDays(3);
@@ -55,7 +56,9 @@ public class ExpiryNotificationWorker : BackgroundService
         var expiringItems = await context.PantryItems
             .Include(p => p.Product)
             .Include(p => p.User)
-            .Where(p => p.ExpirationDate <= thresholdDate)
+            .Where(p => p.Status == PantryItemStatus.Active
+                     && p.ExpirationDate >= today
+                     && p.ExpirationDate <= thresholdDate)
             .ToListAsync(ct);
 
         foreach (var item in expiringItems)
@@ -88,6 +91,11 @@ public class ExpiryNotificationWorker : BackgroundService
                 }
             }
         }
+
+        var halfYearAgo = DateTime.UtcNow.AddMonths(-6);
+        await context.PantryItems
+            .Where(p => p.Status != PantryItemStatus.Active && p.ResolvedAt < halfYearAgo)
+            .ExecuteDeleteAsync(ct); 
 
         await context.SaveChangesAsync(ct);
     }

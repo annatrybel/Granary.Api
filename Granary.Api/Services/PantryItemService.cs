@@ -331,43 +331,48 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<IEnumerable<ExpiringPantryItemDto>>> GetExpiringItemsAsync(
-            string lang = "pl",
-            int days = 4,
-            int limit = 10)
+        public async Task<ServiceResult<bool>> ResolveItemAsync(Guid pantryItemId, PantryItemStatus status)
+        {
+            if (status is not PantryItemStatus.Consumed and not PantryItemStatus.Wasted)
+            {
+                return ServiceResult<bool>.Failure("Nieprawidłowy status produktu.");
+            }
+
+            var userId = _currentUserService.UserId;
+            var item = await _dbContext.PantryItems
+                .FirstOrDefaultAsync(pi => pi.Id == pantryItemId && pi.UserId == userId);
+
+            if (item == null)
+            {
+                return ServiceResult<bool>.Failure("Nie znaleziono produktu.");
+            }
+
+            item.Status = status;
+            item.ResolvedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+
+            return ServiceResult<bool>.Success(true);
+        }
+
+        public async Task<ServiceResult<PantryZeroWasteStatsDto>> GetZeroWasteStatsAsync()
         {
             var userId = _currentUserService.UserId;
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var maxDate = today.AddDays(days);
-
-            var items = await _dbContext.PantryItems
+            var now = DateTime.UtcNow;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var resolvedItems = _dbContext.PantryItems
                 .AsNoTracking()
-                .Where(pi => pi.UserId == userId
-                          && pi.Status == PantryItemStatus.Active
-                          && pi.ExpirationDate != default
-                          && pi.ExpirationDate <= maxDate)
-                .OrderBy(pi => pi.ExpirationDate)
-                .Take(limit)
-                .Select(pi => new ExpiringPantryItemDto
-                {
-                    Id = pi.Id,
-                    ProductName = pi.Product.Translations
-                        .Where(t => t.Language.Code == lang)
-                        .Select(t => t.Name)
-                        .FirstOrDefault() ?? pi.Product.Name,
-                    ProductImageUrl = pi.Product.ImageUrl,
-                    CategoryName = pi.Product.Category.Translations
-                        .Where(t => t.Language.Code == lang)
-                        .Select(t => t.Name)
-                        .FirstOrDefault() ?? pi.Product.Category.Name,
-                    CategoryImageUrl = pi.Product.Category.ImageUrl,
-                    StorageLocation = pi.StorageLocation,
-                    ExpirationDate = pi.ExpirationDate,
-                    DaysLeft = pi.ExpirationDate.DayNumber - today.DayNumber
-                })
-                .ToListAsync();
+                .Where(pi => pi.UserId == userId && pi.ResolvedAt >= startOfMonth);
 
-            return ServiceResult<IEnumerable<ExpiringPantryItemDto>>.Success(items);
-        }
+            var consumedCount = await resolvedItems.CountAsync(pi => pi.Status == PantryItemStatus.Consumed);
+            var wastedCount = await resolvedItems.CountAsync(pi => pi.Status == PantryItemStatus.Wasted);
+            var totalResolvedCount = consumedCount + wastedCount;
+
+            return ServiceResult<PantryZeroWasteStatsDto>.Success(new PantryZeroWasteStatsDto
+            {
+                ConsumedCount = consumedCount,
+                WastedCount = wastedCount,
+                Percentage = totalResolvedCount == 0 ? 100m : consumedCount * 100m / totalResolvedCount
+            });
+        }        
     }
 }

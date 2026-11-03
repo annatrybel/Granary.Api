@@ -30,6 +30,13 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetStats()
+        {
+            var result = await _pantryService.GetZeroWasteStatsAsync();
+            return HandleServiceResult(result);
+        }
+
         /// <summary>
         /// Dodaje produkt (z katalogu LUB własny customowy) do spiżarni użytkownika.
         /// </summary>
@@ -49,6 +56,20 @@ namespace Granary.Api.Controllers.Mobile
             var result = await _pantryService.UpdateItemAsync(id, dto);
             return HandleServiceResult(result);
         }
+
+        [HttpPost("{id:guid}/consume")]
+        public async Task<IActionResult> ConsumeItem(Guid id)
+        {
+            var result = await _pantryService.ResolveItemAsync(id, PantryItemStatus.Consumed);
+            return result.IsSuccess ? Ok() : HandleServiceResult(result);
+        }
+
+        [HttpPost("{id:guid}/waste")]
+        public async Task<IActionResult> WasteItem(Guid id)
+        {
+            var result = await _pantryService.ResolveItemAsync(id, PantryItemStatus.Wasted);
+            return result.IsSuccess ? Ok() : HandleServiceResult(result);
+        }
                 
         /// <summary>
         /// Usuwa produkt ze spiżarni (i automatycznie sprząta nieużywane customowe produkty z bazy).
@@ -60,17 +81,7 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
-
-        ///// <summary>
-        ///// Pobiera produkty z krótką datą ważności dla Dashboardu (domyślnie do 4 dni).
-        ///// </summary>
-        //[HttpGet("expiring")]                             //nie uzywany na frontendzie
-        //public async Task<IActionResult> GetExpiringItems([FromQuery] int days = 4, [FromQuery] int limit = 10, [FromQuery] string lang = "pl")
-        //{
-        //    var result = await _pantryService.GetExpiringItemsAsync(lang, days, limit);
-        //    return HandleServiceResult(result);
-        //}
-
+        
         public record GenerateProductImageRequest(string Name);
 
 

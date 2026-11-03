@@ -12,6 +12,7 @@ namespace Granary.Api.Services.Interfaces
         Task<ServiceResult<PantryItemDto>> AddItemAsync(CreateOrUpdatePantryItemDto dto, string lang = "pl");
         Task<ServiceResult<PantryItemDto>> UpdateItemAsync(Guid pantryItemId, CreateOrUpdatePantryItemDto dto, string lang = "pl");
         Task<ServiceResult<bool>> DeleteItemAsync(Guid pantryItemId);
-        Task<ServiceResult<IEnumerable<ExpiringPantryItemDto>>> GetExpiringItemsAsync(string lang = "pl", int days = 4, int limit = 10);
+        Task<ServiceResult<bool>> ResolveItemAsync(Guid pantryItemId, PantryItemStatus status);
+        Task<ServiceResult<PantryZeroWasteStatsDto>> GetZeroWasteStatsAsync();
     }
 }

@@ -47,6 +47,13 @@ namespace Granary.Api.Controllers.Mobile
             return HandleServiceResult(result);
         }
 
+        [HttpPatch("dietary-preference")]
+        public async Task<IActionResult> UpdateDietaryPreference([FromBody] UpdateDietaryPreferenceDto dto)
+        {
+            var result = await _profileService.UpdateDietaryPreferenceAsync(dto.DietaryPreference);
+            return HandleServiceResult(result);
+        }
+
         [HttpPut("update-profile")]
         public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto dto)
         {

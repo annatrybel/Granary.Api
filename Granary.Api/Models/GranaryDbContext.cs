@@ -19,8 +19,6 @@ namespace Granary.Api.Models
         public DbSet<PantryItem> PantryItems { get; set; }
         public DbSet<Recipe> Recipes { get; set; }
         public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
-        public DbSet<MealPlan> MealPlans { get; set; }     //przemyslec i jak cos to do usuniecia
-        public DbSet<MealPlanRecipe> MealPlanRecipes { get; set; }  //przemyslec i jak cos to do usuniecia
         public DbSet<ShoppingList> ShoppingLists { get; set; }
         public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
         public DbSet<UserRecipeInteraction> UserRecipeInteractions { get; set; }
@@ -74,14 +72,6 @@ namespace Granary.Api.Models
                 .Property(p => p.Status)
                 .HasConversion<string>();
 
-            modelBuilder.Entity<MealPlan>()
-                .Property(m => m.Status)
-                .HasConversion<string>();
-
-            modelBuilder.Entity<MealPlanRecipe>()
-                .Property(m => m.MealType)
-                .HasConversion<string>();
-
             modelBuilder.Entity<UserRecipeInteraction>()
                 .HasKey(x => new { x.UserId, x.RecipeId });
 
@@ -114,6 +104,10 @@ namespace Granary.Api.Models
             modelBuilder.Entity<CategoryTranslation>()
                 .HasIndex(ct => new { ct.CategoryId, ct.LanguageId })
                 .IsUnique();
+
+            // W GranaryDbContext.cs -> OnModelCreating:
+            modelBuilder.Entity<PantryItem>()
+                .HasIndex(p => new { p.UserId, p.ResolvedAt });
         }
     }
 }
