@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 
-namespace Granary.Api.Services
+namespace Granary.Api.Services.Auth
 {
     public class UserManagementService : IUserManagementService
     {
@@ -241,7 +241,7 @@ namespace Granary.Api.Services
                 }
 
                 var token = await _userManager.GeneratePasswordResetTokenAsync(newUser);
-                var setupUrl = PasswordLinkBuilder.BuildResetUrl(_configuration, token, newUser.Email!);
+                var setupUrl = FrontendOriginResolver.BuildResetPasswordUrl(_configuration, token, newUser.Email!);
                 var emailResult = await _emailService.SendAccountSetupAsync(newUser.Email!, newUser.UserName ?? newUser.Email!, setupUrl);
                 if (!emailResult.IsSuccess)
                 {

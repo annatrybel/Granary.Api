@@ -4,10 +4,10 @@ using Microsoft.Extensions.Caching.Memory;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Shopping;
 using Granary.Api.Models.Enums;
-using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.EntityFrameworkCore;
+using Granary.Api.Services.Auth;
 
 namespace Granary.Api.Services.Shopping
 {

@@ -5,7 +5,7 @@ using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
-namespace Granary.Api.Services
+namespace Granary.Api.Services.Email
 {
     public class EmailService : IEmailService
     {
@@ -247,6 +247,31 @@ namespace Granary.Api.Services
             if (File.Exists(primaryPath)) return primaryPath;
 
             return Path.Combine(Directory.GetCurrentDirectory(), "Templates", templateFileName);
+        }
+
+        public async Task<ServiceResult> SendPasswordResetEmailAsync(string recipientEmail, string userName, string resetUrl)
+        {
+            try
+            {
+                string templatePath = ResolveTemplatePath("ForgotPasswordEmail.html");
+                if (!File.Exists(templatePath))
+                {
+                    _logger.LogError("Nie znaleziono szablonu email: {TemplatePath}", templatePath);
+                    return ServiceResult.Failure("Błąd szablonu wiadomości.");
+                }
+
+                string body = await File.ReadAllTextAsync(templatePath);
+                body = body.Replace("{UserName}", WebUtility.HtmlEncode(userName));
+                body = body.Replace("{CallbackUrl}", WebUtility.HtmlEncode(resetUrl));
+
+                await _emailSender.SendEmailAsync(recipientEmail, "Reset hasła – Smart Pantry", body);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd wysyłania linku resetu hasła do {RecipientEmail}", recipientEmail);
+                return ServiceResult.Failure(EmailError.SendFailed());
+            }
         }
     }
 }

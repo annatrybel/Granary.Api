@@ -9,5 +9,6 @@ namespace Granary.Api.Services.Interfaces
         Task<ServiceResult> SendSharedPantryInvitationAsync(string senderName, string recipientEmail, string pantryName, string invitationUrl, bool userExists);
         Task<ServiceResult> SendExpiringProductsAlertAsync(string recipientEmail, string pantryName, int expiringCount, string productsListHtml);
         Task<ServiceResult> SendAccountSetupAsync(string recipientEmail, string userName, string setupUrl);
+        Task<ServiceResult> SendPasswordResetEmailAsync(string recipientEmail, string userName, string resetUrl);
     }
 }

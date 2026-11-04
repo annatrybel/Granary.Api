@@ -1,15 +1,14 @@
-﻿using Granary.Api.Extensions;
-using Granary.Api.Models;
-using Granary.Api.Models.DatabaseModels;
-using Granary.Api.Models.Dto.Contact;
+﻿using Granary.Api.Models.Dto.Contact;
 using Granary.Api.Models.Dto.Profile;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Granary.Api.Controllers.Mobile
 {
+    /// <summary>
+    /// Zarządzanie profilem użytkownika, preferencjami, powiadomieniami i zaproszeniami do spiżarni.
+    /// </summary>
     [ApiController]
     [Authorize]
     [Route("api/profile")]
@@ -25,114 +24,175 @@ namespace Granary.Api.Controllers.Mobile
             _emailService = emailService;
         }
 
+        /// <summary>
+        /// Pobiera pełne dane profilowe zalogowanego użytkownika.
+        /// </summary>
+        /// <returns>Dane profilu (nazwa, email, avatar, motyw, język, preferencje).</returns>
         [HttpGet("me")]
         [ProducesResponseType(typeof(UserProfileDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetMyProfile()
         {
             var result = await _profileService.GetProfileAsync();
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Aktualizuje preferencję trybu ciemnego (Dark Mode).
+        /// </summary>
+        /// <param name="dto">Flaga określająca czy włączyć tryb ciemny.</param>
         [HttpPatch("dark-mode")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateDarkMode([FromBody] UpdateDarkModeDto dto)
         {
             var result = await _profileService.UpdateDarkModeAsync(dto.DarkMode);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Zmienia preferowany język interfejsu użytkownika.
+        /// </summary>
+        /// <param name="dto">Kod języka (np. "pl", "en").</param>
         [HttpPatch("language")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateLanguage([FromBody] UpdateLanguageDto dto)
         {
             var result = await _profileService.UpdateLanguageAsync(dto.Language);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Aktualizuje preferencję dietetyczną użytkownika.
+        /// </summary>
+        /// <param name="dto">Wybrana dieta (np. Standard, Wegetariańska, Wegańska itp.).</param>
         [HttpPatch("dietary-preference")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateDietaryPreference([FromBody] UpdateDietaryPreferenceDto dto)
         {
             var result = await _profileService.UpdateDietaryPreferenceAsync(dto.DietaryPreference);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Aktualizuje podstawowe dane profilu (nazwa użytkownika i/lub zdjęcie profilowe).
+        /// </summary>
+        /// <param name="dto">Formularz ze zaktualizowaną nazwą oraz opcjonalnym plikiem awatara.</param>
+        /// <returns>Zaktualizowany URL awatara i nazwa użytkownika.</returns>
         [HttpPut("update-profile")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(UpdateProfileResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto dto)
         {
             var result = await _profileService.UpdateProfileAsync(dto);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Wysyła e-mail z zaproszeniem do wspólnej spiżarni.
+        /// </summary>
+        /// <remarks>
+        /// Generuje bezpieczny link prowadzący do aplikacji frontendowej umożliwiający dołączenie do spiżarni.
+        /// </remarks>
+        /// <param name="dto">Adres e-mail zapraszanej osoby oraz nazwa spiżarni.</param>
         [HttpPost("invite-member")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> InviteMember([FromBody] SendInvitationRequestDto dto)
         {
-            var hostUrl = $"{Request.Scheme}://{Request.Host}";
-            var result = await _profileService.SendInvitationAsync(dto, hostUrl);
+            var result = await _profileService.SendInvitationAsync(dto);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Wysyła wiadomość z formularza kontaktowego do administratora serwisu.
+        /// </summary>
+        /// <param name="dto">Treść zgłoszenia, temat oraz dane kontaktowe.</param>
         [HttpPost("contact")]
-        public async Task<IActionResult> SendContactMessage(
-        [FromBody] ContactMessageDto dto,
-        [FromServices] IEmailService emailService)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> SendContactMessage([FromBody] ContactMessageDto dto)
         {
-            var result = await emailService.SendContactMessageToAdminAsync(dto);
+            var result = await _emailService.SendContactMessageToAdminAsync(dto);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Włącza lub wyłącza codzienne powiadomienia o kończącej się dacie ważności produktów.
+        /// </summary>
+        /// <param name="dto">Flaga określająca stan powiadomień.</param>
         [HttpPatch("notifications-settings")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateExpiryNotifications([FromBody] UpdateExpiryNotificationsDto dto)
         {
             var result = await _profileService.UpdateExpiryNotificationsAsync(dto.ExpiryNotifications);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Pobiera listę powiadomień systemowych użytkownika.
+        /// </summary>
+        /// <param name="onlyUnread">Jeśli true, zwraca wyłącznie nieodczytane powiadomienia.</param>
         [HttpGet("notifications")]
         [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetNotifications([FromQuery] bool onlyUnread = true)
         {
             var result = await _profileService.GetNotificationsAsync(onlyUnread);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Oznacza wybrane powiadomienie jako odczytane.
+        /// </summary>
+        /// <param name="id">Identyfikator powiadomienia.</param>
         [HttpPatch("notifications/{id:guid}/read")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> MarkNotificationAsRead([FromRoute] Guid id)
         {
             var result = await _profileService.MarkNotificationAsReadAsync(id);
             return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Pobiera publiczny klucz VAPID wymagany do subskrypcji WebPush w przeglądarce.
+        /// </summary>
         [HttpGet("push-public-key")]
-        public IActionResult GetPushPublicKey([FromServices] IConfiguration configuration)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetPushPublicKey()
         {
-            var key = configuration["VAPID_PUBLIC_KEY"];
-            return string.IsNullOrEmpty(key) ? NotFound() : Ok(new { publicKey = key });
+            var result = await _profileService.GetPushPublicKeyAsync();
+            return HandleServiceResult(result);
         }
 
+        /// <summary>
+        /// Zapisuje lub aktualizuje subskrypcję WebPush dla bieżącego urządzenia.
+        /// </summary>
+        /// <param name="dto">Dane subskrypcji WebPush (endpoint, klucze P256dh i Auth).</param>
         [HttpPost("push-subscription")]
-        public async Task<IActionResult> SavePushSubscription([FromBody] PushSubscriptionDto dto, [FromServices] GranaryDbContext db)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> SavePushSubscription([FromBody] PushSubscriptionDto dto)
         {
-            var userId = User.GetUserId();
-
-            var existing = await db.DevicePushSubscriptions
-                .FirstOrDefaultAsync(s => s.UserId == userId && s.Endpoint == dto.Endpoint);
-
-            if (existing is null)
-            {
-                db.DevicePushSubscriptions.Add(new DevicePushSubscription
-                {
-                    UserId = userId,
-                    Endpoint = dto.Endpoint,
-                    P256dh = dto.P256dh,
-                    Auth = dto.Auth
-                });
-            }
-            else
-            {
-                existing.P256dh = dto.P256dh;
-                existing.Auth = dto.Auth;
-            }
-
-            await db.SaveChangesAsync();
-            return NoContent();
+            var result = await _profileService.SavePushSubscriptionAsync(dto);
+            return HandleServiceResult(result);
         }
     }
 }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Granary.Api.Extensions;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Granary.Api.Services.Auth;
 
 namespace Granary.Api.Services
 {

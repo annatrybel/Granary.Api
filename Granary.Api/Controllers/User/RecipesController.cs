@@ -1,6 +1,6 @@
 ﻿using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Recipes;
-using Granary.Api.Services;
+using Granary.Api.Services.Ai;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

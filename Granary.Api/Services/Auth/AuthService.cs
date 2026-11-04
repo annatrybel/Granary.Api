@@ -16,7 +16,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 
-namespace Granary.Api.Services
+namespace Granary.Api.Services.Auth
 {
     public class AuthService : IAuthService
     {
@@ -26,6 +26,7 @@ namespace Granary.Api.Services
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly IEmailSender _emailSender;
+        private readonly IEmailService _emailService;
         private readonly ICurrentUserService _currentUserService;
         private readonly JwtSettings _jwtSettings;
         private readonly GranaryDbContext _context;
@@ -201,24 +202,12 @@ namespace Granary.Api.Services
         public async Task<ServiceResult> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
         {
             var user = await _userManager.FindByEmailAsync(forgotPasswordDto.Email);
-
-            if (user == null)
-            {
-                return ServiceResult.Success();
-            }
+            if (user == null) return ServiceResult.Success();
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var callbackUrl = FrontendOriginResolver.BuildResetPasswordUrl(_configuration, token, user.Email!, forgotPasswordDto.FrontendOrigin);
 
-            var callbackUrl = PasswordLinkBuilder.BuildResetUrl(_configuration, token, user.Email!);
-
-            var templatePath = Path.Combine(_hostingEnvironment.ContentRootPath, "Templates", "ForgotPasswordEmail.html");
-            var emailBody = await File.ReadAllTextAsync(templatePath);
-
-            emailBody = emailBody.Replace("{UserName}", user.UserName ?? "użytkowniku");
-            emailBody = emailBody.Replace("{CallbackUrl}", callbackUrl);
-
-            var subject = "Reset hasła";
-            await _emailSender.SendEmailAsync(user.Email!, subject, emailBody);
+            await _emailService.SendPasswordResetEmailAsync(user.Email!, user.UserName ?? "użytkowniku", callbackUrl);
             return ServiceResult.Success();
         }
 

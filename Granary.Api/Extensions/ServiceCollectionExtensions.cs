@@ -2,7 +2,10 @@
 using Granary.Api.Models.Settings;
 using Granary.Api.Seeders;
 using Granary.Api.Services;
+using Granary.Api.Services.Ai;
+using Granary.Api.Services.Auth;
 using Granary.Api.Services.Catalog;
+using Granary.Api.Services.Email;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Shopping;
 using Granary.Api.Services.Storage;
@@ -72,17 +75,6 @@ public static class ServiceCollectionExtensions
                 {
                     Console.WriteLine($"[BŁĄD WALIDACJI JWT]: {context.Exception.GetType().Name} - {context.Exception.Message}");
                     return Task.CompletedTask;
-                },
-                OnMessageReceived = context =>
-                {
-                    var accessToken = context.Request.Query["access_token"];
-                    var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) &&
-                        (path.StartsWithSegments("/chatHub") || path.StartsWithSegments("/notificationHub")))
-                    {
-                        context.Token = accessToken;
-                    }
-                    return Task.CompletedTask;
                 }
             };
         })
@@ -99,8 +91,21 @@ public static class ServiceCollectionExtensions
 
             options.Events.OnRemoteFailure = context =>
             {
-                var frontendUrl = configuration["FRONTEND_BASE_URL"] ?? "https://granarymobile-user-app.vercel.app";
+                string? requestedOrigin = null;
+                if (context.Properties?.Items.TryGetValue("frontendOrigin", out var origin) == true)
+                {
+                    requestedOrigin = origin;
+                }
+
+                var frontendUrl = FrontendOriginResolver.Resolve(configuration, requestedOrigin);
                 var error = context.Failure?.Message ?? "Błąd logowania przez Google";
+                if (frontendUrl is null)
+                {
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    context.HandleResponse();
+                    return context.Response.WriteAsync("Brak poprawnego FRONTEND_BASE_URL w konfiguracji.");
+                }
+
                 context.Response.Redirect($"{frontendUrl}/login?error={Uri.EscapeDataString(error)}");
                 context.HandleResponse();
                 return Task.CompletedTask;
@@ -112,22 +117,18 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddCustomCors(this IServiceCollection services, IConfiguration configuration)
     {
-        var frontendUrl = configuration["FRONTEND_BASE_URL"];
-        var additionalOrigins = configuration["ALLOWED_ORIGINS"]?
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            ?? Array.Empty<string>();
-
-        var allAllowedOrigins = additionalOrigins
-            .Concat(new[] { frontendUrl })
-            .Where(url => !string.IsNullOrEmpty(url))
-            .Distinct()
-            .ToArray();
+        var allowedOrigins = FrontendOriginResolver.GetAllowedOrigins(configuration);
 
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy =>
             {
-                policy.WithOrigins(allAllowedOrigins)
+                if (allowedOrigins.Length > 0)
+                {
+                    policy.WithOrigins(allowedOrigins);
+                }
+
+                policy
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();

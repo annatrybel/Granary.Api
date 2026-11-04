@@ -6,7 +6,7 @@ using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace Granary.Api.Services
+namespace Granary.Api.Services.Ai
 {
     public class AiTranslationService : IAiTranslationService
     {

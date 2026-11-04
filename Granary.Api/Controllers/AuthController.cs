@@ -1,6 +1,7 @@
 ﻿using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Auth;
 using Granary.Api.Models.Dto.Users;
+using Granary.Api.Services.Auth;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -111,8 +112,15 @@ namespace Granary.Api.Controllers
         [ProducesResponseType(StatusCodes.Status302Found)]
         public IActionResult ExternalLogin(string provider = "Google", string returnUrl = null)
         {
-            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), null, new { returnUrl });
+            var frontendOrigin = FrontendOriginResolver.Resolve(_configuration, returnUrl);
+            if (frontendOrigin is null)
+            {
+                return Problem("Brak poprawnego FRONTEND_BASE_URL lub origin nie jest dozwolony.");
+            }
+
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), null, new { returnUrl = frontendOrigin });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            properties.Items["frontendOrigin"] = frontendOrigin;
             return new ChallengeResult(provider, properties);
         }
         /// <summary>
@@ -122,7 +130,11 @@ namespace Granary.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
         {
-            var frontendUrl = _configuration["FRONTEND_BASE_URL"] ?? "https://granarymobile-user-app.vercel.app";
+            var frontendUrl = FrontendOriginResolver.Resolve(_configuration, returnUrl);
+            if (frontendUrl is null)
+            {
+                return Problem("Brak poprawnego FRONTEND_BASE_URL lub origin nie jest dozwolony.");
+            }
 
             if (remoteError != null)
             {

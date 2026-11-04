@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace Granary.Api.Services;
+namespace Granary.Api.Services.Ai;
 
 public interface IAiVisionProductService
 {

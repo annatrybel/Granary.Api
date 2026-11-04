@@ -1,7 +1,7 @@
 ﻿using Granary.Api.Extensions;
 using System.Security.Claims;
 
-namespace Granary.Api.Services
+namespace Granary.Api.Services.Auth
 {
     public interface ICurrentUserService
     {

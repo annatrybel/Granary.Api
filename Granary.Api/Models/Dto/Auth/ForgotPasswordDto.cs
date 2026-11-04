@@ -7,6 +7,8 @@ namespace Granary.Api.Models.Dto.Auth
         [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
+
+        public string? FrontendOrigin { get; set; }
     }
 
     public class ResetPasswordDto

@@ -47,7 +47,6 @@ builder.Services.AddCustomRateLimiter();
 builder.Services.AddCustomSwagger();
 builder.Services.AddBusinessServices(builder.Configuration);
 
-builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 builder.Services.AddHealthChecks();
 builder.Services.AddResponseCompression();

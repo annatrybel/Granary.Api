@@ -3,6 +3,7 @@ using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Pantry;
 using Granary.Api.Models.Enums;
+using Granary.Api.Services.Auth;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Granary.Api.Services.Storage;

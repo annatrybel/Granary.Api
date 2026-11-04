@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Mail;
 
-namespace Granary.Api.Services
+namespace Granary.Api.Services.Email
 {
     public class EmailSender : IEmailSender
     {

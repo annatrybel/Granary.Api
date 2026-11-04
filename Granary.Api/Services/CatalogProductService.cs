@@ -3,7 +3,6 @@ using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Catalog;
 using Granary.Api.Models.Enums;
-using Granary.Api.Services;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Granary.Api.Extensions;
 using Granary.Api.Services.Storage;
 using System.Linq.Expressions;
+using Granary.Api.Services.Auth;
 
 namespace Granary.Api.Services.Catalog
 {
@@ -312,13 +312,14 @@ namespace Granary.Api.Services.Catalog
         }
 
         public async Task<Guid> GetOrCreateCustomProductAsync(
-            string name,
-            Guid? categoryId = null,
-            string? unit = null,
-            string? imageUrl = null)
+        string name,
+        Guid? categoryId = null,
+        string? unit = null,
+        string? imageUrl = null)
         {
             var userId = _currentUserService.UserId;
             var trimmedName = name.Trim();
+
             var existing = await _dbContext.Products
                 .FirstOrDefaultAsync(p => p.CreatedByUserId == userId && p.Name.ToLower() == trimmedName.ToLower());
 

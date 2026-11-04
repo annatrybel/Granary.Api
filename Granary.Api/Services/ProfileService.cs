@@ -2,6 +2,7 @@
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Profile;
 using Granary.Api.Models.Enums;
+using Granary.Api.Services.Auth;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Granary.Api.Services.Storage;
@@ -18,6 +19,7 @@ namespace Granary.Api.Services
         private readonly ILogger<ProfileService> _logger;
         private readonly GranaryDbContext _dbContext;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IConfiguration _configuration;
 
         public ProfileService(
             UserManager<ApplicationUser> userManager,
@@ -25,7 +27,8 @@ namespace Granary.Api.Services
             IEmailService emailService,
             ILogger<ProfileService> logger,
             GranaryDbContext dbContext,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _fileStorageService = fileStorageService;
@@ -33,6 +36,7 @@ namespace Granary.Api.Services
             _logger = logger;
             _dbContext = dbContext;
             _currentUserService = currentUserService;
+            _configuration = configuration;
         }
 
         public async Task<ServiceResult<UserProfileDto>> GetProfileAsync()
@@ -79,18 +83,25 @@ namespace Granary.Api.Services
 
             if (dto.Avatar != null && dto.Avatar.Length > 0)
             {
-                if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+                var previousAvatarUrl = user.AvatarUrl;
+                var newAvatarUrl = await _fileStorageService.SaveFileAsync(dto.Avatar, "avatars");
+                if (string.IsNullOrWhiteSpace(newAvatarUrl))
                 {
-                    _fileStorageService.DeleteFile(user.AvatarUrl);
+                    return ServiceResult<UpdateProfileResponseDto>.Failure("Nie udało się zapisać przesłanego zdjęcia profilowego.");
                 }
 
-                var newAvatarUrl = await _fileStorageService.SaveFileAsync(dto.Avatar, "avatars");
                 user.AvatarUrl = newAvatarUrl;
 
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                 {
+                    _fileStorageService.DeleteFile(newAvatarUrl);
                     return ServiceResult<UpdateProfileResponseDto>.Failure("Nie udało się zaktualizować zdjęcia profilowego.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(previousAvatarUrl))
+                {
+                    _fileStorageService.DeleteFile(previousAvatarUrl);
                 }
             }
 
@@ -155,7 +166,7 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<bool>> SendInvitationAsync(SendInvitationRequestDto dto, string hostUrl)
+        public async Task<ServiceResult<bool>> SendInvitationAsync(SendInvitationRequestDto dto)
         {
             var userId = _currentUserService.UserId;
             var user = await _userManager.FindByIdAsync(userId.ToString());
@@ -163,8 +174,11 @@ namespace Granary.Api.Services
 
             var recipient = await _userManager.FindByEmailAsync(dto.RecipientEmail);
             bool userExists = recipient != null;
+            var frontendUrl = FrontendOriginResolver.Resolve(_configuration)
+                ?? _configuration["FRONTEND_BASE_URL"]
+                ?? "http://localhost:4200";
 
-            var invitationUrl = $"{hostUrl}/join/{user.Id}";
+            var invitationUrl = $"{frontendUrl}/join/{user.Id}";
 
             var result = await _emailService.SendSharedPantryInvitationAsync(
                 senderName: user.UserName ?? "Domownik",
@@ -182,7 +196,6 @@ namespace Granary.Api.Services
 
             return ServiceResult<bool>.Success(true);
         }
-
 
         public async Task<ServiceResult<bool>> UpdateExpiryNotificationsAsync(bool enabled)
         {
@@ -238,6 +251,44 @@ namespace Granary.Api.Services
             await _dbContext.SaveChangesAsync();
 
             return ServiceResult<bool>.Success(true);
+        }
+
+        public async Task<ServiceResult<bool>> SavePushSubscriptionAsync(PushSubscriptionDto dto)
+        {
+            var userId = _currentUserService.UserId;
+
+            var existing = await _dbContext.DevicePushSubscriptions
+                .FirstOrDefaultAsync(s => s.UserId == userId && s.Endpoint == dto.Endpoint);
+
+            if (existing is null)
+            {
+                _dbContext.DevicePushSubscriptions.Add(new DevicePushSubscription
+                {
+                    UserId = userId,
+                    Endpoint = dto.Endpoint,
+                    P256dh = dto.P256dh,
+                    Auth = dto.Auth
+                });
+            }
+            else
+            {
+                existing.P256dh = dto.P256dh;
+                existing.Auth = dto.Auth;
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return ServiceResult<bool>.Success(true);
+        }
+
+        public Task<ServiceResult<object>> GetPushPublicKeyAsync()
+        {
+            var key = _configuration["VAPID_PUBLIC_KEY"];
+            if (string.IsNullOrEmpty(key))
+            {
+                return Task.FromResult(ServiceResult<object>.Failure("Klucz VAPID nie został skonfigurowany na serwerze."));
+            }
+
+            return Task.FromResult(ServiceResult<object>.Success(new { publicKey = key }));
         }
     }
 }
