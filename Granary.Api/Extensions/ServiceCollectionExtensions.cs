@@ -219,6 +219,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRecipeService, RecipeService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IAdminRecipeService, AdminRecipeService>();
+        services.AddScoped<IAdminCategoryService, AdminCategoryService>();
 
         // Serwisy AI
         services.AddScoped<IAiTranslationService, AiTranslationService>();

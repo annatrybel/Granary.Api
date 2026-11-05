@@ -59,6 +59,7 @@ namespace Granary.Api.Services
                         .Where(t => t.Language.Code == lang)
                         .Select(t => t.Name)
                         .FirstOrDefault() ?? pi.Product.Category.Name,
+                    CategoryImageUrl = pi.Product.Category.ImageUrl,
                     StorageLocation = pi.StorageLocation,
                     Status = pi.Status,
                     Quantity = pi.Quantity,
@@ -93,6 +94,7 @@ namespace Granary.Api.Services
                         .Where(t => t.Language.Code == lang)
                         .Select(t => t.Name)
                         .FirstOrDefault() ?? pi.Product.Category.Name,
+                    CategoryImageUrl = pi.Product.Category.ImageUrl,
                     StorageLocation = pi.StorageLocation,
                     Status = pi.Status,
                     Quantity = pi.Quantity,

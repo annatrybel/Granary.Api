@@ -9,6 +9,7 @@
         public int DefaultShelfLifeDays { get; set; }
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public string? CategoryImageUrl { get; set; }
         public Guid? CreatedByUserId { get; set; } 
     }
 }

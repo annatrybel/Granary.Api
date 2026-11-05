@@ -11,6 +11,7 @@ namespace Granary.Api.Models.Dto
         public string ProductName { get; set; } = string.Empty;
         public string? ImageUrl { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public string? CategoryImageUrl { get; set; }
         public StorageLocation StorageLocation { get; set; }
         public PantryItemStatus Status { get; set; }
         public decimal Quantity { get; set; }

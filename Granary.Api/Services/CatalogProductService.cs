@@ -45,6 +45,7 @@ namespace Granary.Api.Services.Catalog
             DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
             CategoryId = p.CategoryId,
             CategoryName = p.Category.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Category.Name,
+            CategoryImageUrl = p.Category.ImageUrl,
             CreatedByUserId = p.CreatedByUserId
         };
 
@@ -151,6 +152,7 @@ namespace Granary.Api.Services.Catalog
                     DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Category.Name,
+                    CategoryImageUrl = p.Category.ImageUrl,
                     CreatedByUserId = p.CreatedByUserId
                 })
                 .ToListAsync();
