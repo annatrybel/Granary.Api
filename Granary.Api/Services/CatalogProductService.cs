@@ -1,16 +1,16 @@
-﻿using Granary.Api.Models;
+﻿using Granary.Api.Extensions;
+using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Catalog;
 using Granary.Api.Models.Enums;
+using Granary.Api.Services.Auth;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
+using Granary.Api.Services.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Granary.Api.Extensions;
-using Granary.Api.Services.Storage;
 using System.Linq.Expressions;
-using Granary.Api.Services.Auth;
 
 namespace Granary.Api.Services.Catalog
 {
@@ -41,7 +41,7 @@ namespace Granary.Api.Services.Catalog
             Id = p.Id,
             Name = p.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Name,
             ImageUrl = p.ImageUrl,
-            DefaultUnit = p.Translations.Where(t => t.LanguageId == targetLangId && t.Unit != null).Select(t => t.Unit).FirstOrDefault() ?? p.DefaultUnit,
+            DefaultUnit = p.Translations.Where(t => t.LanguageId == targetLangId && t.Unit != null).Select(t => t.Unit).FirstOrDefault() ?? p.Unit,
             DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
             CategoryId = p.CategoryId,
             CategoryName = p.Category.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Category.Name,
@@ -56,7 +56,7 @@ namespace Granary.Api.Services.Catalog
             string lang = "pl")
         {
             var userId = _currentUserService.UserId;
-            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+            var normalizedLang = (lang ?? "pl").Trim().ToLowerInvariant();
 
             var targetLangId = await _cache.GetLanguageIdAsync(
                 _dbContext, $"lang:catalog:{normalizedLang}",
@@ -64,19 +64,17 @@ namespace Granary.Api.Services.Catalog
 
             var dbQuery = _dbContext.Products
                 .AsNoTracking()
-                .AsQueryable();
-
-            dbQuery = dbQuery.Where(p => p.CreatedByUserId == null || p.CreatedByUserId == userId);
+                .Where(p => p.CreatedByUserId == null || p.CreatedByUserId == userId);
 
             if (excludePantry)
             {
-                var userActiveProductIds = await _dbContext.PantryItems
-                    .AsNoTracking()
-                    .Where(pi => pi.UserId == userId && pi.Status == PantryItemStatus.Active)
-                    .Select(pi => pi.ProductId)
-                    .ToListAsync();
+                dbQuery = dbQuery.Where(p => !_dbContext.PantryItems.Any(pi =>
+                    pi.UserId == userId && pi.Status == PantryItemStatus.Active && pi.ProductId == p.Id));
+            }
 
-                dbQuery = dbQuery.Where(p => !userActiveProductIds.Contains(p.Id));
+            if (categoryId.HasValue && categoryId.Value != Guid.Empty)
+            {
+                dbQuery = dbQuery.Where(p => p.CategoryId == categoryId.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(query))
@@ -88,12 +86,8 @@ namespace Granary.Api.Services.Catalog
                 );
             }
 
-            if (categoryId.HasValue && categoryId.Value != Guid.Empty)
-            {
-                dbQuery = dbQuery.Where(p => p.CategoryId == categoryId.Value);
-            }
-
             var results = await dbQuery
+                .OrderBy(p => p.Name)
                 .Take(50)
                 .Select(CreateDtoSelector(targetLangId))
                 .ToListAsync();
@@ -107,12 +101,19 @@ namespace Granary.Api.Services.Catalog
             var page = Math.Max(query.Page, 1);
             var pageSize = Math.Clamp(query.PageSize, 1, maxPageSize);
 
-            var normalizedLang = (lang ?? "pl").Trim().ToLower();
+            var normalizedLang = (lang ?? "pl").Trim().ToLowerInvariant();
             var targetLangId = await _cache.GetLanguageIdAsync(
                 _dbContext, $"lang:catalog:{normalizedLang}",
                 l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
 
             var products = _dbContext.Products.AsNoTracking();
+
+            if (query.IsCustom.HasValue)
+            {
+                products = query.IsCustom.Value
+                    ? products.Where(p => p.CreatedByUserId != null)
+                    : products.Where(p => p.CreatedByUserId == null);
+            }
 
             if (query.CategoryId.HasValue && query.CategoryId.Value != Guid.Empty)
             {
@@ -121,8 +122,7 @@ namespace Granary.Api.Services.Catalog
 
             if (!string.IsNullOrWhiteSpace(query.Search))
             {
-                var search = query.Search.Trim();
-                var pattern = search.ToContainsPattern();
+                var pattern = query.Search.Trim().ToContainsPattern();
                 products = products.Where(p =>
                     EF.Functions.ILike(p.Name, pattern) ||
                     p.Translations.Any(t => EF.Functions.ILike(t.Name, pattern)));
@@ -138,7 +138,6 @@ namespace Granary.Api.Services.Catalog
 
             var totalCount = await products.CountAsync();
 
-            // Admin edytuje dane bazowe produktu, więc nazwa i jednostka nie są podmieniane tłumaczeniem.
             var items = await ordered
                 .ThenBy(p => p.Id)
                 .Skip((page - 1) * pageSize)
@@ -146,9 +145,9 @@ namespace Granary.Api.Services.Catalog
                 .Select(p => new CatalogProductDto
                 {
                     Id = p.Id,
-                    Name = p.Name,
+                    Name = p.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Name,
                     ImageUrl = p.ImageUrl,
-                    DefaultUnit = p.DefaultUnit,
+                    DefaultUnit = p.Unit,
                     DefaultShelfLifeDays = p.DefaultShelfLifeDays ?? 7,
                     CategoryId = p.CategoryId,
                     CategoryName = p.Category.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? p.Category.Name,
@@ -171,36 +170,26 @@ namespace Granary.Api.Services.Catalog
 
         public async Task<ServiceResult<CatalogProductDto>> GetByIdAsync(Guid id, string lang = "pl")
         {
-            var normalizedLang = (lang ?? "pl").Trim().ToLower();
-            var targetLang = await _dbContext.Languages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
-            var targetLangId = targetLang?.Id ?? Guid.Empty;
+            var normalizedLang = (lang ?? "pl").Trim().ToLowerInvariant();
+            var targetLangId = await _cache.GetLanguageIdAsync(
+                _dbContext, $"lang:catalog:{normalizedLang}",
+                l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
 
             var product = await _dbContext.Products
                 .AsNoTracking()
-                .Include(p => p.Translations)
-                .Include(p => p.Category)
-                    .ThenInclude(c => c.Translations)
                 .Where(p => p.Id == id)
                 .Select(CreateDtoSelector(targetLangId))
                 .FirstOrDefaultAsync();
 
-            if (product == null)
-            {
-                return ServiceResult<CatalogProductDto>.Failure($"Produkt w katalogu o ID '{id}' nie został znaleziony.");
-            }
-
-            return ServiceResult<CatalogProductDto>.Success(product);
+            return product != null
+                ? ServiceResult<CatalogProductDto>.Success(product)
+                : ServiceResult<CatalogProductDto>.Failure($"Produkt w katalogu o ID '{id}' nie został znaleziony.");
         }
 
         public async Task<ServiceResult<CatalogProductDto>> CreateAsync(CreateOrUpdateCatalogProductDto createDto, Guid? currentUserId = null)
         {
-            var categoryExists = await _dbContext.Categories.AnyAsync(c => c.Id == createDto.CategoryId);
-            if (!categoryExists)
-            {
+            if (!await _dbContext.Categories.AnyAsync(c => c.Id == createDto.CategoryId))
                 return ServiceResult<CatalogProductDto>.Failure("Wskazana kategoria nie istnieje.");
-            }
 
             var imageUrl = await _fileStorageService.ProcessImageAsync(createDto.ImageUrl, null, "products");
 
@@ -210,15 +199,13 @@ namespace Granary.Api.Services.Catalog
                 CategoryId = createDto.CategoryId,
                 Name = createDto.Name.Trim(),
                 ImageUrl = imageUrl,
-                DefaultUnit = createDto.DefaultUnit ?? "szt.",
+                Unit = createDto.DefaultUnit ?? "szt.",
                 DefaultShelfLifeDays = createDto.DefaultShelfLifeDays,
                 CreatedByUserId = currentUserId
             };
 
             _dbContext.Products.Add(product);
             await _dbContext.SaveChangesAsync();
-
-            _logger.LogInformation("Dodano nowy produkt katalogowy: {ProductName} (ID: {ProductId})", product.Name, product.Id);
 
             return await GetByIdAsync(product.Id);
         }
@@ -229,84 +216,67 @@ namespace Granary.Api.Services.Catalog
                 .Include(p => p.Translations)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (product == null)
-            {
-                return ServiceResult<CatalogProductDto>.Failure($"Produkt o ID '{id}' nie został znaleziony.");
-            }
+            if (product == null) return ServiceResult<CatalogProductDto>.Failure($"Produkt o ID '{id}' nie został znaleziony.");
+            if (!isAdmin && product.CreatedByUserId != currentUserId) return ServiceResult<CatalogProductDto>.Failure("Brak uprawnień do edycji tego produktu w katalogu.");
+            if (!await _dbContext.Categories.AnyAsync(c => c.Id == updateDto.CategoryId)) return ServiceResult<CatalogProductDto>.Failure("Wskazana kategoria nie istnieje.");
 
-            if (!isAdmin && product.CreatedByUserId != currentUserId)
-            {
-                return ServiceResult<CatalogProductDto>.Failure("Brak uprawnień do edycji tego produktu w katalogu.");
-            }
-
-            var categoryExists = await _dbContext.Categories.AnyAsync(c => c.Id == updateDto.CategoryId);
-            if (!categoryExists)
-            {
-                return ServiceResult<CatalogProductDto>.Failure("Wskazana kategoria nie istnieje.");
-            }
-
-            // Inwalidacja starych tłumaczeń przy zmianie polskiej nazwy:
             if (!string.Equals(product.Name, updateDto.Name.Trim(), StringComparison.OrdinalIgnoreCase))
             {
                 if (product.Translations.Any())
-                {
                     _dbContext.ProductTranslations.RemoveRange(product.Translations);
-                }
             }
 
             product.CategoryId = updateDto.CategoryId;
             product.Name = updateDto.Name.Trim();
             product.ImageUrl = await _fileStorageService.ProcessImageAsync(updateDto.ImageUrl, product.ImageUrl, "products");
-            product.DefaultUnit = updateDto.DefaultUnit ?? "szt.";
+            product.Unit = updateDto.DefaultUnit ?? "szt.";
             product.DefaultShelfLifeDays = updateDto.DefaultShelfLifeDays;
 
             await _dbContext.SaveChangesAsync();
-
-            _logger.LogInformation("Zaktualizowano produkt katalogowy o ID: {ProductId}", product.Id);
-
             return await GetByIdAsync(product.Id);
         }
 
         public async Task<ServiceResult<bool>> DeleteAsync(Guid id, Guid? currentUserId = null, bool isAdmin = false)
         {
             var product = await _dbContext.Products.FindAsync(id);
+            if (product == null) return ServiceResult<bool>.Failure($"Produkt o ID '{id}' nie został znaleziony.");
+            if (!isAdmin && product.CreatedByUserId != currentUserId) return ServiceResult<bool>.Failure("Brak uprawnień do usunięcia tego produktu z katalogu.");
 
-            if (product == null)
+            var isUsed = await _dbContext.RecipeIngredients.AnyAsync(ri => ri.ProductId == id)
+                      || await _dbContext.PantryItems.AnyAsync(pi => pi.ProductId == id)
+                      || await _dbContext.ShoppingListItems.AnyAsync(sli => sli.ProductId == id);
+
+            if (isUsed)
             {
-                return ServiceResult<bool>.Failure($"Produkt o ID '{id}' nie został znaleziony.");
+                return ServiceResult<bool>.Failure("Nie można usunąć produktu, ponieważ jest powiązany z przepisami, lodówką lub listą zakupów.");
             }
 
-            if (!isAdmin && product.CreatedByUserId != currentUserId)
-            {
-                return ServiceResult<bool>.Failure("Brak uprawnień do usunięcia tego produktu z katalogu.");
-            }
+            if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                _fileStorageService.DeleteFile(product.ImageUrl);
 
             _dbContext.Products.Remove(product);
             await _dbContext.SaveChangesAsync();
-
-            _logger.LogInformation("Usunięto produkt z katalogu o ID: {ProductId}", id);
 
             return ServiceResult<bool>.Success(true);
         }
 
         public async Task<ServiceResult<IEnumerable<CategoryDto>>> GetCategoriesAsync(string lang = "pl")
         {
-            var normalizedLang = (lang ?? "pl").Trim().ToLower();
-            var targetLang = await _dbContext.Languages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
-            var targetLangId = targetLang?.Id ?? Guid.Empty;
+            var normalizedLang = (lang ?? "pl").Trim().ToLowerInvariant();
+            var targetLangId = await _cache.GetLanguageIdAsync(
+                _dbContext, $"lang:catalog:{normalizedLang}",
+                l => l.Code.ToLower() == normalizedLang || l.Code.ToLower().StartsWith(normalizedLang));
 
             var categories = await _dbContext.Categories
                 .AsNoTracking()
-                .Include(c => c.Translations)
                 .OrderBy(c => c.DisplayOrder)
                 .Select(c => new CategoryDto
                 {
                     Id = c.Id,
                     Name = c.Translations.Where(t => t.LanguageId == targetLangId).Select(t => t.Name).FirstOrDefault() ?? c.Name,
                     ImageUrl = c.ImageUrl,
-                    DisplayOrder = c.DisplayOrder
+                    DisplayOrder = c.DisplayOrder,
+                    IsPantryStaple = c.IsPantryStaple
                 })
                 .ToListAsync();
 
@@ -314,34 +284,29 @@ namespace Granary.Api.Services.Catalog
         }
 
         public async Task<Guid> GetOrCreateCustomProductAsync(
-        string name,
-        Guid? categoryId = null,
-        string? unit = null,
-        string? imageUrl = null)
+            string name,
+            Guid? categoryId = null,
+            string? unit = null,
+            string? imageUrl = null)
         {
             var userId = _currentUserService.UserId;
             var trimmedName = name.Trim();
+            var normalized = trimmedName.ToLower();
+
+            var systemProduct = await _dbContext.Products
+                .FirstOrDefaultAsync(p => p.CreatedByUserId == null && p.Name.ToLower() == normalized);
+
+            if (systemProduct != null) return systemProduct.Id;
 
             var existing = await _dbContext.Products
-                .FirstOrDefaultAsync(p => p.CreatedByUserId == userId && p.Name.ToLower() == trimmedName.ToLower());
+                .FirstOrDefaultAsync(p => p.CreatedByUserId == userId && p.Name.ToLower() == normalized);
 
-            if (existing != null)
-            {
-                return existing.Id;
-            }
+            if (existing != null) return existing.Id;
 
-            Guid targetCategoryId;
-            if (categoryId.HasValue && categoryId.Value != Guid.Empty)
-            {
-                targetCategoryId = categoryId.Value;
-            }
-            else
-            {
-                var defaultCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "Inne")
-                                   ?? await _dbContext.Categories.OrderBy(c => c.DisplayOrder).FirstOrDefaultAsync();
-
-                targetCategoryId = defaultCategory?.Id ?? Guid.Empty;
-            }
+            var targetCategoryId = categoryId is { } catId && catId != Guid.Empty
+                ? catId
+                : (await _dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "Inne")
+                   ?? await _dbContext.Categories.OrderBy(c => c.DisplayOrder).FirstOrDefaultAsync())?.Id ?? Guid.Empty;
 
             var newProduct = new Product
             {
@@ -349,8 +314,9 @@ namespace Granary.Api.Services.Catalog
                 Name = trimmedName,
                 CategoryId = targetCategoryId,
                 ImageUrl = imageUrl,
-                DefaultUnit = !string.IsNullOrWhiteSpace(unit) ? unit : "szt.",
-                CreatedByUserId = userId
+                Unit = !string.IsNullOrWhiteSpace(unit) ? unit : "szt.",
+                CreatedByUserId = userId,
+                CreatedAt = DateTime.UtcNow
             };
 
             _dbContext.Products.Add(newProduct);

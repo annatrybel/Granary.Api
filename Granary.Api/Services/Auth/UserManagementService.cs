@@ -7,9 +7,7 @@ using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Runtime.InteropServices;
 using System.Security.Claims;
-using System.Security.Cryptography;
 
 namespace Granary.Api.Services.Auth
 {
@@ -60,10 +58,9 @@ namespace Granary.Api.Services.Auth
             {
                 var page = query.Page < 1 ? 1 : query.Page;
                 var pageSize = query.PageSize < 1 ? 10 : query.PageSize;
-
                 var now = DateTimeOffset.UtcNow;
 
-                var users =
+                var usersQuery =
                     from u in _context.Users.AsNoTracking()
                     join ur in _context.UserRoles on u.Id equals ur.UserId into userRoles
                     from ur in userRoles.DefaultIfEmpty()
@@ -77,13 +74,14 @@ namespace Granary.Api.Services.Auth
                         AvatarUrl = u.AvatarUrl,
                         RoleId = r == null ? string.Empty : r.Id.ToString(),
                         RoleName = r == null ? string.Empty : r.Name ?? string.Empty,
+                        EmailConfirmed = u.EmailConfirmed, 
                         IsLocked = u.LockoutEnabled && u.LockoutEnd != null && u.LockoutEnd > now
                     };
 
                 if (!string.IsNullOrWhiteSpace(query.Search))
                 {
                     var pattern = $"%{EscapeLikePattern(query.Search.Trim())}%";
-                    users = users.Where(u =>
+                    usersQuery = usersQuery.Where(u =>
                         EF.Functions.ILike(u.UserName, pattern, "\\") ||
                         EF.Functions.ILike(u.Email, pattern, "\\"));
                 }
@@ -91,14 +89,13 @@ namespace Granary.Api.Services.Auth
                 var descending = string.Equals(query.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
                 var ordered = (query.SortBy?.Trim().ToLowerInvariant()) switch
                 {
-                    "email" => descending ? users.OrderByDescending(u => u.Email) : users.OrderBy(u => u.Email),
-                    "rolename" or "role" => descending ? users.OrderByDescending(u => u.RoleName) : users.OrderBy(u => u.RoleName),
-                    "islocked" => descending ? users.OrderByDescending(u => u.IsLocked) : users.OrderBy(u => u.IsLocked),
-                    _ => descending ? users.OrderByDescending(u => u.UserName) : users.OrderBy(u => u.UserName)
+                    "email" => descending ? usersQuery.OrderByDescending(u => u.Email) : usersQuery.OrderBy(u => u.Email),
+                    "rolename" or "role" => descending ? usersQuery.OrderByDescending(u => u.RoleName) : usersQuery.OrderBy(u => u.RoleName),
+                    "islocked" => descending ? usersQuery.OrderByDescending(u => u.IsLocked) : usersQuery.OrderBy(u => u.IsLocked),
+                    _ => descending ? usersQuery.OrderByDescending(u => u.UserName) : usersQuery.OrderBy(u => u.UserName)
                 };
 
-                var totalCount = await users.CountAsync();
-
+                var totalCount = await usersQuery.CountAsync();
                 var pagedItems = await ordered
                     .ThenBy(u => u.UserId)
                     .Skip((page - 1) * pageSize)
@@ -115,38 +112,10 @@ namespace Granary.Api.Services.Auth
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,                 "Error fetching users with roles");
+                _logger.LogError(ex, "Błąd pobierania listy użytkowników.");
                 return ServiceResult<PagedResult<UserDto>>.Failure(CommonErrors.DataProcessingError("Błąd pobierania listy użytkowników."));
             }
         }
-
-                        private static string EscapeLikePattern(string value) =>
-                            value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
-
-                        private static string GenerateRandomPassword()
-                        {
-                            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-                            const string lower = "abcdefghijkmnopqrstuvwxyz";
-                            const string digits = "23456789";
-                            const string symbols = "!@#$%^&*-_=+";
-                            const string all = upper + lower + digits + symbols;
-
-                            var chars = new List<char>
-                            {
-                                upper[RandomNumberGenerator.GetInt32(upper.Length)],
-                                lower[RandomNumberGenerator.GetInt32(lower.Length)],
-                                digits[RandomNumberGenerator.GetInt32(digits.Length)],
-                                symbols[RandomNumberGenerator.GetInt32(symbols.Length)]
-                            };
-
-                            while (chars.Count < 32)
-                            {
-                                chars.Add(all[RandomNumberGenerator.GetInt32(all.Length)]);
-                            }
-
-                            RandomNumberGenerator.Shuffle(CollectionsMarshal.AsSpan(chars));
-                            return new string(chars.ToArray());
-                        }
 
         public async Task<ServiceResult> LockUser(string userId)
         {
@@ -159,12 +128,23 @@ namespace Granary.Api.Services.Auth
                 await _userManager.SetLockoutEnabledAsync(user, true);
                 await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
 
-                _logger.LogInformation("User {UserId} locked permanently", userId);
+                var activeTokens = await _context.RefreshTokens
+                    .Where(t => t.UserId == user.Id && !t.IsRevoked)
+                    .ToListAsync();
+
+                foreach (var t in activeTokens)
+                {
+                    t.IsRevoked = true;
+                    t.RevokedDate = DateTime.UtcNow;
+                }
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Użytkownik {UserId} został zablokowany, a jego sesje zerwane.", userId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error permanently locking user {UserId}", userId);
+                _logger.LogError(ex, "Błąd blokowania konta użytkownika {UserId}", userId);
                 return ServiceResult.Failure(CommonErrors.UpdateFailed(ObjectName, userId, "Błąd blokowania konta."));
             }
         }
@@ -179,12 +159,12 @@ namespace Granary.Api.Services.Auth
 
                 await _userManager.SetLockoutEndDateAsync(user, null);
 
-                _logger.LogInformation("User {UserId} unlocked", userId);
+                _logger.LogInformation("Użytkownik {UserId} został odblokowany.", userId);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error unlocking user {UserId}", userId);
+                _logger.LogError(ex, "Błąd odblokowywania użytkownika {UserId}", userId);
                 return ServiceResult.Failure(CommonErrors.UpdateFailed(ObjectName, userId, "Błąd odblokowania konta."));
             }
         }
@@ -196,70 +176,74 @@ namespace Granary.Api.Services.Auth
                 return ServiceResult<UserDto>.Failure(AuthErrors.EmailRequired());
             }
 
+            if (!Guid.TryParse(user.RoleId, out var roleGuid))
+            {
+                return ServiceResult<UserDto>.Failure("Nieprawidłowy identyfikator roli.");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var existingUserByEmail = await _userManager.FindByEmailAsync(user.Email);
+                var existingUserByEmail = await _userManager.FindByEmailAsync(user.Email.Trim().ToLowerInvariant());
                 if (existingUserByEmail != null)
                     return ServiceResult<UserDto>.Failure(AuthErrors.UserAlreadyExists());
 
-                var role = await _context.Roles.FindAsync(Guid.Parse(user.RoleId));
+                var role = await _context.Roles.FindAsync(roleGuid);
                 if (role == null || string.IsNullOrEmpty(role.Name))
                     return ServiceResult<UserDto>.Failure(UserManagementErrors.RoleNotFound(user.RoleId));
 
-                if (role.Name.Equals("Administrator", StringComparison.OrdinalIgnoreCase))
+                bool isRoleAdmin = string.Equals(role.Name, "Administrator", StringComparison.OrdinalIgnoreCase);
+
+                if (isRoleAdmin && (currentUser == null || !currentUser.IsInRole("Administrator")))
                 {
-                    if (currentUser == null || !currentUser.IsInRole("Administrator"))
-                    {
-                        _logger.LogWarning("Użytkownik bez uprawnień próbował utworzyć admina.");
-                        return ServiceResult<UserDto>.Failure(UserManagementErrors.CannotCreateAdminWithoutPrivileges());
-                    }
+                    _logger.LogWarning("Użytkownik bez uprawnień próbował utworzyć admina.");
+                    return ServiceResult<UserDto>.Failure(UserManagementErrors.CannotCreateAdminWithoutPrivileges());
                 }
 
                 var newUser = new ApplicationUser
                 {
-                    Email = user.Email,
-                    UserName = user.UserName,
-                    EmailConfirmed = true
+                    Email = user.Email.Trim().ToLowerInvariant(),
+                    UserName = string.IsNullOrWhiteSpace(user.UserName) ? user.Email.Split('@')[0] : user.UserName.Trim(),
+                    EmailConfirmed = false
                 };
 
-                // Konto dostaje losowe hasło, którego nikt nie zna; użytkownik ustawia własne przez link z e-maila.
-                var createResult = await _userManager.CreateAsync(newUser, GenerateRandomPassword());
+                var createResult = await _userManager.CreateAsync(newUser);
                 if (!createResult.Succeeded)
                 {
                     var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-                    _logger.LogError("CreateAsync failed: {Errors}", errors);
                     return ServiceResult<UserDto>.Failure(UserManagementErrors.CreateFailed(errors));
                 }
 
                 var roleResult = await _userManager.AddToRoleAsync(newUser, role.Name);
                 if (!roleResult.Succeeded)
                 {
-                    await transaction.RollbackAsync();
                     var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
                     return ServiceResult<UserDto>.Failure(UserManagementErrors.UpdateFailed("Nie udało się przypisać roli: " + errors));
                 }
 
                 var token = await _userManager.GeneratePasswordResetTokenAsync(newUser);
-                var setupUrl = FrontendOriginResolver.BuildResetPasswordUrl(_configuration, token, newUser.Email!);
+                var setupUrl = FrontendOriginResolver.BuildAccountSetupUrl(
+                    _configuration,
+                    token,
+                    newUser.Email!,
+                    isAdmin: isRoleAdmin
+                );
+
                 var emailResult = await _emailService.SendAccountSetupAsync(newUser.Email!, newUser.UserName ?? newUser.Email!, setupUrl);
                 if (!emailResult.IsSuccess)
                 {
-                    await transaction.RollbackAsync();
-                    _logger.LogError("Nie wysłano linku do ustawienia hasła dla {Email}; konto nie zostało utworzone.", user.Email);
-                    return ServiceResult<UserDto>.Failure(UserManagementErrors.CreateFailed(
-                        "Nie udało się wysłać e-maila z linkiem do ustawienia hasła. Konto nie zostało utworzone."));
+                    return ServiceResult<UserDto>.Failure("Nie udało się wysłać e-maila z linkiem. Konto nie zostało utworzone.");
                 }
 
                 await transaction.CommitAsync();
 
                 user.UserId = newUser.Id.ToString();
+                user.EmailConfirmed = false;
                 return ServiceResult<UserDto>.Success(user);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error creating user {Email}", user.Email);
+                _logger.LogError(ex, "Błąd podczas tworzenia użytkownika {Email}", user.Email);
                 return ServiceResult<UserDto>.Failure(CommonErrors.InternalServerError("Błąd zapisu nowego użytkownika."));
             }
         }
@@ -271,6 +255,11 @@ namespace Granary.Api.Services.Auth
                 return ServiceResult.Failure(AuthErrors.EmailRequired());
             }
 
+            if (!Guid.TryParse(model.RoleId, out var roleGuid))
+            {
+                return ServiceResult.Failure("Nieprawidłowy identyfikator roli.");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -278,21 +267,22 @@ namespace Granary.Api.Services.Auth
                 if (user == null)
                     return ServiceResult.Failure(CommonErrors.NotFound(ObjectName, model.UserId));
 
-                var role = await _context.Roles.FindAsync(Guid.Parse(model.RoleId));
+                var role = await _context.Roles.FindAsync(roleGuid);
                 if (role == null)
                     return ServiceResult.Failure(UserManagementErrors.RoleNotFound(model.RoleId));
 
-                if (!string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase))
+                var cleanEmail = model.Email.Trim().ToLowerInvariant();
+                if (!string.Equals(user.Email, cleanEmail, StringComparison.OrdinalIgnoreCase))
                 {
-                    var existingUserWithNewEmail = await _userManager.FindByEmailAsync(model.Email);
+                    var existingUserWithNewEmail = await _userManager.FindByEmailAsync(cleanEmail);
                     if (existingUserWithNewEmail != null && existingUserWithNewEmail.Id != user.Id)
                     {
                         return ServiceResult.Failure(AuthErrors.UserAlreadyExists());
                     }
-                    user.Email = model.Email;
+                    user.Email = cleanEmail;
                 }
 
-                user.UserName = model.UserName;
+                user.UserName = model.UserName?.Trim() ?? user.UserName;
 
                 var updateResult = await _userManager.UpdateAsync(user);
                 if (!updateResult.Succeeded)
@@ -302,64 +292,118 @@ namespace Granary.Api.Services.Auth
                 }
 
                 var currentRoles = await _userManager.GetRolesAsync(user);
-                if (currentRoles.Any())
+                if (!currentRoles.Contains(role.Name!))
                 {
-                    await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                    if (currentRoles.Any())
+                    {
+                        await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                    }
+                    await _userManager.AddToRoleAsync(user, role.Name!);
                 }
-
-                await _userManager.AddToRoleAsync(user, role.Name!);
 
                 await transaction.CommitAsync();
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error updating roles/user {UserId}", model.UserId);
+                _logger.LogError(ex, "Błąd aktualizacji użytkownika {UserId}", model.UserId);
                 return ServiceResult.Failure(CommonErrors.UpdateFailed(ObjectName, model.UserId));
             }
         }
 
         public async Task<ServiceResult<UserDto>> GetUserById(string userId)
         {
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                return ServiceResult<UserDto>.Failure("Nieprawidłowy identyfikator użytkownika.");
+            }
+
             try
             {
-                var userGuid = Guid.Parse(userId);
-                var userData = await _context.Users
-                     .Where(u => u.Id == userGuid)
-                     .Join(_context.UserRoles,
-                           u => u.Id,
-                           ur => ur.UserId,
-                           (u, ur) => new { User = u, UserRole = ur })
-                     .Join(_context.Roles,
-                           ur => ur.UserRole.RoleId,
-                           r => r.Id,
-                           (ur, r) => new
-                           {
-                               User = ur.User,
-                               Role = r
-                           })
-                     .FirstOrDefaultAsync();
+                var userDto = await (
+                    from u in _context.Users.AsNoTracking()
+                    where u.Id == userGuid
+                    join ur in _context.UserRoles on u.Id equals ur.UserId into urGroup
+                    from ur in urGroup.DefaultIfEmpty()
+                    join r in _context.Roles on ur.RoleId equals r.Id into rGroup
+                    from r in rGroup.DefaultIfEmpty()
+                    select new UserDto
+                    {
+                        UserId = u.Id.ToString(),
+                        UserName = u.UserName ?? string.Empty,
+                        Email = u.Email ?? string.Empty,
+                        RoleId = r != null ? r.Id.ToString() : string.Empty,
+                        RoleName = r != null ? r.Name ?? string.Empty : string.Empty,
+                        EmailConfirmed = u.EmailConfirmed,
+                        IsLocked = u.LockoutEnabled && u.LockoutEnd != null && u.LockoutEnd > DateTimeOffset.UtcNow
+                    }
+                ).FirstOrDefaultAsync();
 
-                if (userData == null)
+                if (userDto == null)
                     return ServiceResult<UserDto>.Failure(CommonErrors.NotFound(ObjectName, userId));
-
-                var userDto = new UserDto
-                {
-                    UserId = userData.User.Id.ToString(),
-                    UserName = userData.User.UserName ?? string.Empty,
-                    Email = userData.User.Email ?? string.Empty,
-                    RoleId = userData.Role.Id.ToString(),
-                    RoleName = userData.Role.Name ?? string.Empty
-                };
 
                 return ServiceResult<UserDto>.Success(userDto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "GetUserById error {UserId}", userId);
+                _logger.LogError(ex, "Błąd pobierania użytkownika {UserId}", userId);
                 return ServiceResult<UserDto>.Failure(CommonErrors.FetchFailed(ObjectName));
             }
         }
+
+        public async Task<ServiceResult> ResendSetupLinkAsync(string userId)
+        {
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                return ServiceResult.Failure("Nieprawidłowy identyfikator użytkownika.");
+            }
+
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return ServiceResult.Failure(CommonErrors.NotFound(ObjectName, userId));
+                }
+
+                if (user.EmailConfirmed)
+                {
+                    return ServiceResult.Failure("To konto zostało już aktywowane. Użytkownik posiada aktywne hasło.");
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                bool isRoleAdmin = roles.Contains("Administrator", StringComparer.OrdinalIgnoreCase);
+
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var setupUrl = FrontendOriginResolver.BuildAccountSetupUrl(
+                    _configuration,
+                    token,
+                    user.Email!,
+                    isAdmin: isRoleAdmin
+                );
+
+                var emailResult = await _emailService.SendAccountSetupAsync(
+                    user.Email!,
+                    user.UserName ?? user.Email!,
+                    setupUrl
+                );
+
+                if (!emailResult.IsSuccess)
+                {
+                    return ServiceResult.Failure("Nie udało się wysłać wiadomości e-mail. Spróbuj ponownie później.");
+                }
+
+                _logger.LogInformation("Wysłano ponownie link aktywacyjny dla użytkownika {Email}", user.Email);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd ponownego wysyłania linku aktywacyjnego dla {UserId}", userId);
+                return ServiceResult.Failure(CommonErrors.InternalServerError("Błąd podczas ponownego wysyłania linku."));
+            }
+        }
+
+        private static string EscapeLikePattern(string value) =>
+            value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
     }
 }

@@ -44,11 +44,9 @@ public static class FrontendOriginResolver
                 }
             }
 
-            // Jeśli podano kandydata, ale z obcej/nieznanej domeny -> blokujemy (Open Redirect protection)
             return null;
         }
 
-        // Domyślnie zwracamy domenę użytkownika (pierwszą skonfigurowaną)
         return allowedOrigins[0];
     }
 
@@ -70,12 +68,35 @@ public static class FrontendOriginResolver
         return null;
     }
 
-
-    // W pliku FrontendOriginResolver.cs:
     public static string BuildResetPasswordUrl(IConfiguration configuration, string token, string email, string? frontendOrigin = null)
     {
         var baseUrl = Resolve(configuration, frontendOrigin)
             ?? throw new InvalidOperationException("Brak poprawnego FRONTEND_BASE_URL w konfiguracji.");
+
+        return $"{baseUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(email)}";
+    }
+
+    public static string BuildConfirmEmailUrl(IConfiguration configuration, string token, string email, string? frontendOrigin = null)
+    {
+        var baseUrl = Resolve(configuration, frontendOrigin)
+            ?? throw new InvalidOperationException("Brak poprawnego FRONTEND_BASE_URL w konfiguracji.");
+
+        return $"{baseUrl}/confirm-email?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(email)}";
+    }
+
+    /// <summary>
+    /// Buduje link do pierwszego ustawienia hasła przez użytkownika utworzonego przez admina.
+    /// Jeśli tworzony jest Administrator -> link prowadzi do admin-app.
+    /// Jeśli tworzony jest zwykły User -> link prowadzi do user-app.
+    /// </summary>
+    public static string BuildAccountSetupUrl(IConfiguration configuration, string token, string email, bool isAdmin = false)
+    {
+        var targetOrigin = isAdmin
+            ? configuration["ADMIN_BASE_URL"] ?? configuration["FRONTEND_BASE_URL"]
+            : configuration["FRONTEND_BASE_URL"];
+
+        var baseUrl = ExtractOrigin(targetOrigin)
+            ?? throw new InvalidOperationException("Brak poprawnego adresu bazowego (FRONTEND_BASE_URL / ADMIN_BASE_URL) w konfiguracji.");
 
         return $"{baseUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(email)}";
     }

@@ -143,8 +143,23 @@ namespace Granary.Api.Controllers.Admin
             var result = await _userManagementService.GetUserById(userId);
             return HandleServiceResult(result);
         }
+
+        /// <summary>
+        /// Wysyła ponownie link aktywacyjny (do ustawienia hasła) dla nieaktywnego konta.
+        /// </summary>
+        [HttpPost("resend-setup-link/{userId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> ResendSetupLink([FromRoute] string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(ServiceResult.Failure("Nieprawidłowy identyfikator użytkownika"));
+            }
+
+            var result = await _userManagementService.ResendSetupLinkAsync(userId);
+            return HandleServiceResult(result);
+        }
     }
 }
-
-
-

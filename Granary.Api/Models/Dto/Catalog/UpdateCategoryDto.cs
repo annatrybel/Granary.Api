@@ -1,4 +1,13 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Granary.Api.Models.Dto.Catalog
 {
-    public record UpdateCategoryDto(string Name, int DisplayOrder, string? ImageUrl, IFormFile? ImageFile);
+    public class UpdateCategoryDto
+    {
+        public string? Name { get; set; }
+        public int DisplayOrder { get; set; }
+        public bool IsPantryStaple { get; set; }
+        public IFormFile? ImageFile { get; set; }
+        public string? ImageUrl { get; set; }
+    }
 }

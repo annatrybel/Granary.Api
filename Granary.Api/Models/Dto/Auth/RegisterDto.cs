@@ -4,16 +4,14 @@ namespace Granary.Api.Models.Dto.Auth
 {
     public class RegisterDto
     {
-        [Required]
-    [EmailAddress]
-        public string Email { get; set; }
+        [Required(ErrorMessage = "Adres e-mail jest wymagany.")]
+        [EmailAddress(ErrorMessage = "Niepoprawny format adresu e-mail.")]
+        public string Email { get; set; } = string.Empty;
 
-        [Required]
-        [RegularExpression(@"^[a-zA-Z0-9_\-]*$", ErrorMessage = "Username zawiera niedozwolone znaki.")]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
-        [Required]
-        [MinLength(8)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
+
+        public string? FrontendOrigin { get; set; }
     }
 }
