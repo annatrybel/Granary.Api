@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Granary.Api.Models.Enums;
 
 namespace Granary.Api.Models.Dto.Recipes
 {
@@ -17,11 +16,10 @@ namespace Granary.Api.Models.Dto.Recipes
         public int PrepTimeMinutes { get; set; } = 15;
         public int? Calories { get; set; }
 
-        [EnumDataType(typeof(DietaryPreference))]
-        public DietaryPreference DietaryPreference { get; set; } = DietaryPreference.Standard;
+        public List<Guid> DietIds { get; set; } = new();
 
         public List<CreateRecipeIngredientDto> Ingredients { get; set; } = new();
 
         public List<string> Steps { get; set; } = new();
-    }    
+    }
 }

@@ -10,7 +10,7 @@ namespace Granary.Api.Services.Interfaces
         Task<ServiceResult<UpdateProfileResponseDto>> UpdateProfileAsync(UpdateProfileDto dto);
         Task<ServiceResult<bool>> UpdateDarkModeAsync(bool darkMode);       
         Task<ServiceResult<bool>> UpdateLanguageAsync(string language);
-        Task<ServiceResult<bool>> UpdateDietaryPreferenceAsync(DietaryPreference dietaryPreference);
+        Task<ServiceResult<bool>> UpdateDietaryPreferenceAsync(Guid? dietId);
         Task<ServiceResult<bool>> SendInvitationAsync(SendInvitationRequestDto dto);
         Task<ServiceResult<bool>> UpdateExpiryNotificationsAsync(bool enabled);
         Task<ServiceResult<List<NotificationDto>>> GetNotificationsAsync(bool onlyUnread);

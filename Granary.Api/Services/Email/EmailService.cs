@@ -23,7 +23,7 @@ namespace Granary.Api.Services.Email
             _configuration = configuration;
         }
 
-        #region Formularz Kontaktowy (Wiadomość do Administratora)
+        #region Formularz Kontaktowy
 
         public async Task<ServiceResult> SendContactMessageToAdminAsync(ContactMessageDto message)
         {
@@ -41,7 +41,7 @@ namespace Granary.Api.Services.Email
 
                 if (string.IsNullOrEmpty(adminEmail))
                 {
-                    _logger.LogError("Adres email administratora (AdminEmail/From) nie został skonfigurowany w appsettings.json.");
+                    _logger.LogError("Adres email administratora nie został skonfigurowany w appsettings.json.");
                     return ServiceResult.Failure(EmailError.ConfigurationError());
                 }
 
@@ -67,8 +67,6 @@ namespace Granary.Api.Services.Email
                 ";
 
                 await _emailSender.SendEmailAsync(adminEmail, emailSubject, emailBody);
-                _logger.LogInformation("Przesłano wiadomość kontaktową od {UserEmail} do administratora ({AdminEmail}).", message.Email, adminEmail);
-
                 await SendContactConfirmationToUserAsync(message, safeSubject, safeMessage);
 
                 return ServiceResult.Success();
@@ -108,7 +106,66 @@ namespace Granary.Api.Services.Email
 
         #endregion
 
-        #region Zaproszenia do Wspólnej Spiżarni
+        #region Aktywacja Konta
+
+        public async Task<ServiceResult> SendAccountActivationEmailAsync(string recipientEmail, string userName, string activationUrl)
+        {
+            try
+            {
+                string templatePath = ResolveTemplatePath("AccountActivationEmail.html");
+                if (!File.Exists(templatePath))
+                {
+                    _logger.LogError("Nie znaleziono szablonu email: {TemplatePath}", templatePath);
+                    return ServiceResult.Failure("Błąd szablonu aktywacji konta.");
+                }
+
+                string body = await File.ReadAllTextAsync(templatePath);
+                body = body.Replace("{UserName}", WebUtility.HtmlEncode(userName));
+                body = body.Replace("{ActivationUrl}", WebUtility.HtmlEncode(activationUrl));
+
+                await _emailSender.SendEmailAsync(recipientEmail, "Aktywuj swoje konto – Smart Pantry", body);
+                _logger.LogInformation("Wysłano e-mail aktywacyjny na adres {RecipientEmail}", recipientEmail);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd wysyłania e-maila aktywacyjnego do {RecipientEmail}", recipientEmail);
+                return ServiceResult.Failure(EmailError.SendFailed());
+            }
+        }
+
+        #endregion
+
+        #region Reset Hasła
+
+        public async Task<ServiceResult> SendPasswordResetEmailAsync(string recipientEmail, string userName, string resetUrl)
+        {
+            try
+            {
+                string templatePath = ResolveTemplatePath("ForgotPasswordEmail.html");
+                if (!File.Exists(templatePath))
+                {
+                    _logger.LogError("Nie znaleziono szablonu email: {TemplatePath}", templatePath);
+                    return ServiceResult.Failure("Błąd szablonu wiadomości.");
+                }
+
+                string body = await File.ReadAllTextAsync(templatePath);
+                body = body.Replace("{UserName}", WebUtility.HtmlEncode(userName));
+                body = body.Replace("{CallbackUrl}", WebUtility.HtmlEncode(resetUrl));
+
+                await _emailSender.SendEmailAsync(recipientEmail, "Reset hasła – Smart Pantry", body);
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd wysyłania linku resetu hasła do {RecipientEmail}", recipientEmail);
+                return ServiceResult.Failure(EmailError.SendFailed());
+            }
+        }
+
+        #endregion
+
+        #region Zaproszenia i Powiadomienia
 
         public async Task<ServiceResult> SendSharedPantryInvitationAsync(
             string senderName,
@@ -132,7 +189,6 @@ namespace Granary.Api.Services.Email
                 }
 
                 await _emailSender.SendEmailAsync(recipientEmail, subject, emailBody);
-                _logger.LogInformation("Zaproszenie do spiżarni '{PantryName}' wysłane do {RecipientEmail}", pantryName, recipientEmail);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -159,10 +215,6 @@ namespace Granary.Api.Services.Email
             return content;
         }
 
-        #endregion
-
-        #region Konta Utworzone Przez Administratora
-
         public async Task<ServiceResult> SendAccountSetupAsync(string recipientEmail, string userName, string setupUrl)
         {
             try
@@ -179,19 +231,14 @@ namespace Granary.Api.Services.Email
                 body = body.Replace("{SetupUrl}", WebUtility.HtmlEncode(setupUrl));
 
                 await _emailSender.SendEmailAsync(recipientEmail, "Smart Pantry - ustaw hasło do swojego konta", body);
-                _logger.LogInformation("Wysłano link do ustawienia hasła na adres {RecipientEmail}", recipientEmail);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Błąd wysyłania linku do ustawienia hasła na adres {RecipientEmail}", recipientEmail);
+                _logger.LogError(ex, "Błąd wysyłania linku do ustawienia hasła do {RecipientEmail}", recipientEmail);
                 return ServiceResult.Failure(EmailError.SendFailed());
             }
         }
-
-        #endregion
-
-        #region Powiadomienia o Wygasających Produktach (Zero-Waste Alert)
 
         public async Task<ServiceResult> SendExpiringProductsAlertAsync(
             string recipientEmail,
@@ -212,7 +259,6 @@ namespace Granary.Api.Services.Email
                 }
 
                 await _emailSender.SendEmailAsync(recipientEmail, subject, emailBody);
-                _logger.LogInformation("Wysłano alert o wygasających produktach ({Count}) do {RecipientEmail}", expiringCount, recipientEmail);
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -247,31 +293,6 @@ namespace Granary.Api.Services.Email
             if (File.Exists(primaryPath)) return primaryPath;
 
             return Path.Combine(Directory.GetCurrentDirectory(), "Templates", templateFileName);
-        }
-
-        public async Task<ServiceResult> SendPasswordResetEmailAsync(string recipientEmail, string userName, string resetUrl)
-        {
-            try
-            {
-                string templatePath = ResolveTemplatePath("ForgotPasswordEmail.html");
-                if (!File.Exists(templatePath))
-                {
-                    _logger.LogError("Nie znaleziono szablonu email: {TemplatePath}", templatePath);
-                    return ServiceResult.Failure("Błąd szablonu wiadomości.");
-                }
-
-                string body = await File.ReadAllTextAsync(templatePath);
-                body = body.Replace("{UserName}", WebUtility.HtmlEncode(userName));
-                body = body.Replace("{CallbackUrl}", WebUtility.HtmlEncode(resetUrl));
-
-                await _emailSender.SendEmailAsync(recipientEmail, "Reset hasła – Smart Pantry", body);
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Błąd wysyłania linku resetu hasła do {RecipientEmail}", recipientEmail);
-                return ServiceResult.Failure(EmailError.SendFailed());
-            }
         }
     }
 }

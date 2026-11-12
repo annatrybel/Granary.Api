@@ -11,10 +11,11 @@ namespace Granary.Api.Services.Interfaces
     {
         Task<ServiceResult<List<IdentityRole<Guid>>>> GetAllRolesAsync();
         Task<ServiceResult<PagedResult<UserDto>>> GetAllUsersAsync(PagedQueryDto query);
-        Task<ServiceResult> LockUser(string userId);
-        Task<ServiceResult> UnlockUser(string userId);
+        Task<ServiceResult<UserDto>> GetUserById(string userId);
         Task<ServiceResult<UserDto>> CreateUser(UserDto user, ClaimsPrincipal currentUser);
         Task<ServiceResult> UpdateUser(UserDto model);
-        Task<ServiceResult<UserDto>> GetUserById(string userId);
+        Task<ServiceResult> LockUser(string userId);
+        Task<ServiceResult> UnlockUser(string userId);
+        Task<ServiceResult> ResendSetupLinkAsync(string userId);
     }
 }

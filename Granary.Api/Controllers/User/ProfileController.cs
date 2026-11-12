@@ -75,7 +75,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateDietaryPreference([FromBody] UpdateDietaryPreferenceDto dto)
         {
-            var result = await _profileService.UpdateDietaryPreferenceAsync(dto.DietaryPreference);
+            var result = await _profileService.UpdateDietaryPreferenceAsync(dto.DietId);
             return HandleServiceResult(result);
         }
 

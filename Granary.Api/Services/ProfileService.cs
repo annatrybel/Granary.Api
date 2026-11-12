@@ -1,7 +1,6 @@
 ﻿using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Granary.Api.Models.Dto.Profile;
-using Granary.Api.Models.Enums;
 using Granary.Api.Services.Auth;
 using Granary.Api.Services.Interfaces;
 using Granary.Api.Services.Results;
@@ -56,7 +55,7 @@ namespace Granary.Api.Services
                 AvatarUrl = user.AvatarUrl,
                 DarkMode = user.DarkMode,
                 Language = user.Language,
-                DietaryPreference = user.DietaryPreference
+                DietId = user.DietId // <-- GUID Z BAZY
             };
 
             return ServiceResult<UserProfileDto>.Success(dto);
@@ -81,6 +80,20 @@ namespace Granary.Api.Services
                 }
             }
 
+            if (dto.DietId.HasValue)
+            {
+                var dietExists = await _dbContext.Diets.AnyAsync(d => d.Id == dto.DietId.Value);
+                if (!dietExists)
+                {
+                    return ServiceResult<UpdateProfileResponseDto>.Failure("Wybrana dieta nie istnieje w słowniku.");
+                }
+                user.DietId = dto.DietId;
+            }
+            else
+            {
+                user.DietId = null;
+            }
+
             if (dto.Avatar != null && dto.Avatar.Length > 0)
             {
                 var previousAvatarUrl = user.AvatarUrl;
@@ -103,6 +116,10 @@ namespace Granary.Api.Services
                 {
                     _fileStorageService.DeleteFile(previousAvatarUrl);
                 }
+            }
+            else
+            {
+                await _userManager.UpdateAsync(user);
             }
 
             _logger.LogInformation("Zaktualizowano profil użytkownika {UserId}", userId);
@@ -144,18 +161,18 @@ namespace Granary.Api.Services
             return ServiceResult<bool>.Success(true);
         }
 
-        public async Task<ServiceResult<bool>> UpdateDietaryPreferenceAsync(DietaryPreference dietaryPreference)
+        public async Task<ServiceResult<bool>> UpdateDietaryPreferenceAsync(Guid? dietId)
         {
-            if (!Enum.IsDefined(typeof(DietaryPreference), dietaryPreference))
-            {
-                return ServiceResult<bool>.Failure("Nieprawidłowa preferencja dietetyczna.");
-            }
-
             var userId = _currentUserService.UserId;
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null) return ServiceResult<bool>.Failure("Użytkownik nie istnieje.");
 
-            user.DietaryPreference = dietaryPreference;
+            if (dietId.HasValue && !await _dbContext.Diets.AnyAsync(d => d.Id == dietId.Value))
+            {
+                return ServiceResult<bool>.Failure("Wybrana dieta nie istnieje.");
+            }
+
+            user.DietId = dietId;
             var result = await _userManager.UpdateAsync(user);
 
             if (!result.Succeeded)

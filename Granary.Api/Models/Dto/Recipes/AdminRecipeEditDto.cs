@@ -2,23 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Granary.Api.Models.Dto.Recipes
 {
-    public class AdminRecipeIngredientDto
-    {
-        [Required]
-        public Guid ProductId { get; set; }
-
-        public string ProductName { get; set; } = string.Empty;
-
-        [Range(0.01, 100000, ErrorMessage = "Ilość składnika musi być większa od zera.")]
-        public decimal Quantity { get; set; } = 1;
-
-        [Required(ErrorMessage = "Jednostka składnika jest wymagana."), MaxLength(20)]
-        public string Unit { get; set; } = "szt.";
-
-        public bool IsOptional { get; set; }
-    }
-
-    /// <summary>Dane przepisu w formie nadającej się do edycji w panelu administratora (bez tłumaczeń).</summary>
     public class AdminRecipeEditDto
     {
         public Guid Id { get; set; }
@@ -26,7 +9,6 @@ namespace Granary.Api.Models.Dto.Recipes
         [Required(ErrorMessage = "Nazwa przepisu jest wymagana."), MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        /// <summary>Adres obrazka, data URL (Base64) z wgranego pliku lub adres wygenerowanego obrazu.</summary>
         public string? ImageUrl { get; set; }
 
         [Range(1, 100, ErrorMessage = "Liczba porcji musi wynosić od 1 do 100.")]
@@ -38,8 +20,10 @@ namespace Granary.Api.Models.Dto.Recipes
         [Range(0, 10000, ErrorMessage = "Kaloryczność musi wynosić od 0 do 10000 kcal.")]
         public int? Calories { get; set; }
 
-        public List<string> Steps { get; set; } = new();
+        /// <summary>Identyfikatory GUID wybranych diet.</summary>
+        public List<Guid> DietIds { get; set; } = new();
 
+        public List<string> Steps { get; set; } = new();
         public List<AdminRecipeIngredientDto> Ingredients { get; set; } = new();
     }
 }

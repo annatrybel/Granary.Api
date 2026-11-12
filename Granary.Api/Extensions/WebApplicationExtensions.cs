@@ -45,6 +45,12 @@ public static class WebApplicationExtensions
             {
                 csp.AddDefaultSrc().Self();
 
+                csp.AddImgSrc()
+                   .Self()
+                   .From("https:")
+                   .Blob()
+                   .Data();
+
                 var connectSrc = csp.AddConnectSrc()
                     .Self()
                     .From("https://localhost:7128");

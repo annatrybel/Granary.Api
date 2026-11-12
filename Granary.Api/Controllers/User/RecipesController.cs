@@ -2,6 +2,7 @@
 using Granary.Api.Models.Dto.Recipes;
 using Granary.Api.Services.Ai;
 using Granary.Api.Services.Interfaces;
+using Granary.Api.Services.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,10 +15,14 @@ namespace Granary.Api.Controllers.Mobile
     public class RecipesController : GranaryBaseController
     {
         private readonly IRecipeService _recipeService;
+        private readonly ICustomRecipeService _customRecipeService;
 
-        public RecipesController(IRecipeService recipeService)
+        public RecipesController(
+            IRecipeService recipeService,
+            ICustomRecipeService customRecipeService)
         {
             _recipeService = recipeService;
+            _customRecipeService = customRecipeService;
         }
 
         /// <summary>
@@ -74,7 +79,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateCustomRecipe([FromBody] CreateCustomRecipeDto dto)
         {
-            var result = await _recipeService.CreateCustomRecipeAsync(dto);
+            var result = await _customRecipeService.CreateCustomRecipeAsync(dto);
             return HandleServiceResult(result);
         }
 
@@ -82,7 +87,7 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var result = await _recipeService.DeleteRecipeAsync(id);
+            var result = await _customRecipeService.DeleteRecipeAsync(id);
             return HandleServiceResult(result);
         }
 
@@ -90,25 +95,54 @@ namespace Granary.Api.Controllers.Mobile
         [ProducesResponseType(typeof(RecipeDetailDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateCustomRecipeDto dto)
         {
-            var result = await _recipeService.UpdateCustomRecipeAsync(id, dto);
+            var result = await _customRecipeService.UpdateCustomRecipeAsync(id, dto);
             return HandleServiceResult(result);
         }
 
-
+        [HttpPost("{id:guid}/cook")]
+        public async Task<IActionResult> Cook([FromRoute] Guid id, [FromQuery] string lang = "pl")
+        {
+            var result = await _recipeService.CookRecipeAsync(id, lang);
+            return HandleServiceResult(result);
+        }
 
         public record GenerateRecipeImageRequest(string Title);
 
 
-        [Authorize]
+        /// <summary>
+        /// Generuje obraz potrawy przy użyciu sztucznej inteligencji.
+        /// </summary>
         [HttpPost("generate-image")]
+        [ProducesResponseType(typeof(GeneratedRecipeImageDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GenerateRecipeImage(
             [FromBody] GenerateRecipeImageRequest request,
             [FromServices] IAiImageService imageService)
         {
+            if (string.IsNullOrWhiteSpace(request?.Title))
+            {
+                return HandleServiceResult(ServiceResult<GeneratedRecipeImageDto>.Failure("Tytuł przepisu jest wymagany."));
+            }
+
             var (isValid, imageUrl, errorMessage) = await imageService.GenerateRecipeImageAsync(request.Title);
 
-            if (!isValid) return BadRequest(new { success = false, message = errorMessage });
-            return Ok(new { success = true, imageUrl });
+            if (!isValid || string.IsNullOrWhiteSpace(imageUrl))
+            {
+                return HandleServiceResult(ServiceResult<GeneratedRecipeImageDto>.Failure(errorMessage ?? "Nie udało się wygenerować obrazu."));
+            }
+
+            return HandleServiceResult(ServiceResult<GeneratedRecipeImageDto>.Success(new GeneratedRecipeImageDto(imageUrl)));
+        }
+
+        /// <summary>
+        /// Pobiera słownik diet dla aplikacji mobilnej/webowej użytkownika.
+        /// </summary>
+        [HttpGet("diets")]
+        [ProducesResponseType(typeof(IEnumerable<DietDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetDiets([FromQuery] string lang = "pl")
+        {
+            var result = await _recipeService.GetDietsAsync(lang);
+            return HandleServiceResult(result);
         }
     }
 }

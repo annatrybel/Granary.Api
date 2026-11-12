@@ -1,6 +1,4 @@
-﻿using Granary.Api.Models.Enums;
-
-namespace Granary.Api.Models.Dto.Recipes
+﻿namespace Granary.Api.Models.Dto.Recipes
 {
     public class RecipeDetailDto
     {
@@ -11,13 +9,14 @@ namespace Granary.Api.Models.Dto.Recipes
         public int PrepTimeMinutes { get; set; }
         public int Servings { get; set; }
         public int? Calories { get; set; }
-        public DietaryPreference DietaryPreference { get; set; } = DietaryPreference.Standard;
+
+        public List<DietDto> Diets { get; set; } = new();
 
         public bool IsFavorite { get; set; }
-        public bool IsCustom { get; set; }
+        public bool? UserVote { get; set; }
         public int LikesCount { get; set; }
         public int DislikesCount { get; set; }
-        public bool? UserVote { get; set; }
+        public bool IsCustom { get; set; }
         public List<RecipeIngredientDto> Ingredients { get; set; } = new();
     }
 }

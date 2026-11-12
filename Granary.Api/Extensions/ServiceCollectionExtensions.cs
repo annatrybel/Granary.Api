@@ -7,6 +7,7 @@ using Granary.Api.Services.Auth;
 using Granary.Api.Services.Catalog;
 using Granary.Api.Services.Email;
 using Granary.Api.Services.Interfaces;
+using Granary.Api.Services.Recipes;
 using Granary.Api.Services.Shopping;
 using Granary.Api.Services.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -58,7 +59,7 @@ public static class ServiceCollectionExtensions
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = false, 
+                ValidateIssuer = false,
                 ValidateAudience = false,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
@@ -201,11 +202,13 @@ public static class ServiceCollectionExtensions
     {
         // Seedery
         services.AddScoped<RoleSeeder>();
+        services.AddScoped<AdminSeeder>();
         services.AddScoped<SeedManager>();
         services.AddScoped<CategorySeeder>();
         services.AddScoped<ProductSeeder>();
         services.AddScoped<RecipeSeeder>();
         services.AddScoped<LanguageSeeder>();
+        services.AddScoped<DietSeeder>();
 
         // Serwisy domenowe
         services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -217,6 +220,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IShoppingListService, ShoppingListService>();
         services.AddScoped<IPantryItemService, PantryItemService>();
         services.AddScoped<IRecipeService, RecipeService>();
+        services.AddScoped<ICustomRecipeService, CustomRecipeService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IAdminRecipeService, AdminRecipeService>();
         services.AddScoped<IAdminCategoryService, AdminCategoryService>();

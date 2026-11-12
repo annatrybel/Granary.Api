@@ -1,20 +1,18 @@
-﻿using Granary.Api.Models.Enums;
-using System.ComponentModel.DataAnnotations;
-
-namespace Granary.Api.Models.Dto.Recipes
+﻿namespace Granary.Api.Models.Dto.Recipes
 {
     public class RecipeFilterQueryDto
     {
-        public string Scope { get; set; } = "all"; 
         public string? Query { get; set; }
         public string? Items { get; set; }
+        public string? Scope { get; set; }
+        public Guid? DietId { get; set; }
+
+        public string? Diet { get; set; }
+
         public int? MaxTime { get; set; }
-        public string? SortBy { get; set; } = "match"; 
+        public string? SortBy { get; set; }
+        public string? Lang { get; set; } = "pl";
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
-        public string Lang { get; set; } = "pl";
-        [EnumDataType(typeof(DietaryPreference))]
-        public DietaryPreference? Diet { get; set; }
     }
-    
 }

@@ -347,7 +347,6 @@ namespace Granary.Api.Services.Shopping
                     StorageLocation = dto.DestinationLocation,
                     Status = PantryItemStatus.Active,
                     Quantity = item.Quantity,
-                    Unit = item.Unit ?? "szt.",
                     PurchaseDate = today,
                     ExpirationDate = expiryDate,
                     CreatedAt = DateTime.UtcNow
