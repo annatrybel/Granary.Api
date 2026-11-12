@@ -1,4 +1,5 @@
-﻿using Granary.Api.Models.Dto;
+﻿using Granary.Api.Controllers;
+using Granary.Api.Models.Dto;
 using Granary.Api.Models.Dto.Catalog;
 using Granary.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Granary.Api.Controllers.AdminPanel
 {
     [ApiController]
-    [Authorize(Roles = "Administrator")] 
+    [Authorize(Roles = "Administrator")]
     [Route("api/admin/catalog-products")]
     [Produces("application/json")]
     public class AdminCatalogProductsController : GranaryBaseController
@@ -21,12 +22,13 @@ namespace Granary.Api.Controllers.AdminPanel
 
         /// <summary>
         /// Pobiera stronę produktów z całego katalogu (łącznie z produktami użytkowników) dla panelu administratora.
+        /// Obsługuje filtrowanie po nazwie, kategorii oraz typie (system / custom).
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(AdminCatalogProductsPageDto), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAll([FromQuery] AdminCatalogProductsQueryDto query)
+        public async Task<IActionResult> GetAll([FromQuery] AdminCatalogProductsQueryDto query, [FromQuery] string lang = "pl")
         {
-            var result = await _catalogService.SearchForAdminAsync(query);
+            var result = await _catalogService.SearchForAdminAsync(query, lang);
             return HandleServiceResult(result);
         }
 
@@ -47,7 +49,7 @@ namespace Granary.Api.Controllers.AdminPanel
         /// <summary>
         /// Edytuje dowolny produkt w katalogu systemowym.
         /// </summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:guid}")]
         [ProducesResponseType(typeof(CatalogProductDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -60,10 +62,11 @@ namespace Granary.Api.Controllers.AdminPanel
         }
 
         /// <summary>
-        /// Usuwa dowolny produkt z katalogu systemowego.
+        /// Usuwa dowolny produkt z katalogu systemowego (jeśli nie posiada aktywnych powiązań).
         /// </summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

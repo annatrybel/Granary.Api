@@ -52,9 +52,7 @@ namespace Granary.Api.Controllers.AdminPanel
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateJson(Guid id, [FromBody] UpdateCategoryJsonDto dto)
         {
-            return HandleServiceResult(await _categoryService.UpdateAsync(
-                id,
-                new UpdateCategoryDto(dto.Name, dto.DisplayOrder, dto.ImageUrl, null)));
+            return HandleServiceResult(await _categoryService.UpdateAsync(id, dto));
         }
 
         /// <summary>

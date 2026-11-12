@@ -10,6 +10,7 @@ namespace Granary.Api.Services
     {
         Task<ServiceResult<IEnumerable<CategoryDto>>> GetAllForAdminAsync();
         Task<ServiceResult<CategoryDto>> UpdateAsync(Guid id, UpdateCategoryDto dto);
+        Task<ServiceResult<CategoryDto>> UpdateAsync(Guid id, UpdateCategoryJsonDto dto);
     }
 
     public class AdminCategoryService : IAdminCategoryService
@@ -35,11 +36,23 @@ namespace Granary.Api.Services
                     Id = category.Id,
                     Name = category.Name,
                     ImageUrl = category.ImageUrl,
-                    DisplayOrder = category.DisplayOrder
+                    DisplayOrder = category.DisplayOrder,
+                    IsPantryStaple = category.IsPantryStaple
                 })
                 .ToListAsync();
 
             return ServiceResult<IEnumerable<CategoryDto>>.Success(categories);
+        }
+
+        public Task<ServiceResult<CategoryDto>> UpdateAsync(Guid id, UpdateCategoryJsonDto dto)
+        {
+            return UpdateAsync(id, new UpdateCategoryDto
+            {
+                Name = dto.Name,
+                DisplayOrder = dto.DisplayOrder,
+                ImageUrl = dto.ImageUrl,
+                IsPantryStaple = dto.IsPantryStaple
+            });
         }
 
         public async Task<ServiceResult<CategoryDto>> UpdateAsync(Guid id, UpdateCategoryDto dto)
@@ -108,6 +121,7 @@ namespace Granary.Api.Services
             category.Name = name;
             category.DisplayOrder = dto.DisplayOrder;
             category.ImageUrl = imageUrl;
+            category.IsPantryStaple = dto.IsPantryStaple;
 
             await _context.SaveChangesAsync();
             if (oldImageToDelete != null)
@@ -120,7 +134,8 @@ namespace Granary.Api.Services
                 Id = category.Id,
                 Name = category.Name,
                 ImageUrl = category.ImageUrl,
-                DisplayOrder = category.DisplayOrder
+                DisplayOrder = category.DisplayOrder,
+                IsPantryStaple = category.IsPantryStaple
             });
         }
     }
