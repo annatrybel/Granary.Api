@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Granary.Api.Models.DatabaseModels
 {
-    [Table("Categories")] 
+    [Table("Categories")]
     public class Category
     {
         [Key]
@@ -16,6 +16,7 @@ namespace Granary.Api.Models.DatabaseModels
         public string? ImageUrl { get; set; }
 
         public int DisplayOrder { get; set; } = 0;
+        public bool IsPantryStaple { get; set; } = false;
 
         public ICollection<Product> Products { get; set; } = new List<Product>();
         public ICollection<CategoryTranslation> Translations { get; set; } = new List<CategoryTranslation>();

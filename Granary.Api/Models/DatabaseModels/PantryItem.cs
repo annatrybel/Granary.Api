@@ -23,10 +23,7 @@ namespace Granary.Api.Models.DatabaseModels
         public Product Product { get; set; } = null!;
 
         [Column(TypeName = "decimal(10,2)")] 
-        public decimal Quantity { get; set; } = 1;
-
-        [Required, MaxLength(20)]
-        public string Unit { get; set; } = "szt.";
+        public decimal Quantity { get; set; } = 1;      
 
         public DateOnly PurchaseDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
         public DateOnly ExpirationDate { get; set; }

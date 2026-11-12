@@ -21,7 +21,7 @@ namespace Granary.Api.Models.DatabaseModels
         public string? ImageUrl { get; set; }
 
         [Required, MaxLength(20)]
-        public string DefaultUnit { get; set; } = "szt.";
+        public string Unit { get; set; } = "szt.";
 
         public int? DefaultShelfLifeDays { get; set; }
 
