@@ -20,14 +20,39 @@
     "displayOrder": 4
   },
   {
+    "name": "Ryby i Owoce morza",
+    "imageUrl": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 5
+  },
+  {
     "name": "Mrożonki",
     "imageUrl": "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=400&q=80",
-    "displayOrder": 5
+    "displayOrder": 6
   },
   {
     "name": "Spiżarnia i Suche",
     "imageUrl": "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=80",
-    "displayOrder": 6
+    "displayOrder": 7
+  },
+  {
+    "name": "Sosy i Dodatki",
+    "imageUrl": "https://images.unsplash.com/photo-1582293041079-7814c2f12063?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 8
+  },
+  {
+    "name": "Przyprawy i Zioła",
+    "imageUrl": "https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 9
+  },
+  {
+    "name": "Napoje",
+    "imageUrl": "https://images.unsplash.com/photo-1550505095-81378a674395?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 10
+  },
+  {
+    "name": "Przekąski",
+    "imageUrl": "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=400&q=80",
+    "displayOrder": 11
   },
   {
     "name": "Inne",

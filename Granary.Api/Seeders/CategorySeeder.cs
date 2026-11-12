@@ -8,10 +8,12 @@ namespace Granary.Api.Seeders
     public class CategorySeeder
     {
         private readonly GranaryDbContext _context;
+        private readonly ILogger<CategorySeeder> _logger;
 
-        public CategorySeeder(GranaryDbContext context)
+        public CategorySeeder(GranaryDbContext context, ILogger<CategorySeeder> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task SeedAsync()
@@ -23,7 +25,11 @@ namespace Granary.Api.Seeders
             {
                 jsonPath = Path.Combine(Directory.GetCurrentDirectory(), "Seeders", "Data", "categories.json");
             }
-            if (!File.Exists(jsonPath)) return;
+            if (!File.Exists(jsonPath))
+            {
+                _logger.LogWarning("Nie znaleziono pliku categories.json pod ścieżką: {Path}", jsonPath);
+                return;
+            }
 
             var jsonContent = await File.ReadAllTextAsync(jsonPath);
             var categories = JsonSerializer.Deserialize<List<Category>>(jsonContent,
@@ -33,6 +39,7 @@ namespace Granary.Api.Seeders
             {
                 await _context.Categories.AddRangeAsync(categories);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("CategorySeeder: Pomyślnie załadowano {Count} kategorii.", categories.Count);
             }
         }
     }

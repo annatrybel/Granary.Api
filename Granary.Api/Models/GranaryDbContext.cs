@@ -29,6 +29,10 @@ namespace Granary.Api.Models
         public DbSet<CategoryTranslation> CategoryTranslations { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<DevicePushSubscription> DevicePushSubscriptions { get; set; }
+        public DbSet<Diet> Diets { get; set; } = null!;
+        public DbSet<DietTranslation> DietTranslations { get; set; } = null!;
+        public DbSet<RecipeDiet> RecipeDiets { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -105,9 +109,34 @@ namespace Granary.Api.Models
                 .HasIndex(ct => new { ct.CategoryId, ct.LanguageId })
                 .IsUnique();
 
-            // W GranaryDbContext.cs -> OnModelCreating:
             modelBuilder.Entity<PantryItem>()
                 .HasIndex(p => new { p.UserId, p.ResolvedAt });
+
+            modelBuilder.Entity<RecipeDiet>()
+       .HasKey(rd => new { rd.RecipeId, rd.DietId });
+
+            modelBuilder.Entity<RecipeDiet>()
+                .HasOne(rd => rd.Recipe)
+                .WithMany(r => r.RecipeDiets)
+                .HasForeignKey(rd => rd.RecipeId);
+
+            modelBuilder.Entity<RecipeDiet>()
+                .HasOne(rd => rd.Diet)
+                .WithMany(d => d.RecipeDiets)
+                .HasForeignKey(rd => rd.DietId);
+
+            modelBuilder.Entity<DietTranslation>()
+                .HasKey(dt => new { dt.DietId, dt.LanguageId });
+
+            modelBuilder.Entity<RefreshToken>(b =>
+            {
+                b.HasKey(r => r.Id);
+                b.HasIndex(r => r.Token).IsUnique();
+                b.HasOne(r => r.User)
+                 .WithMany()
+                 .HasForeignKey(r => r.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

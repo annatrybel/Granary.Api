@@ -25,9 +25,24 @@ namespace Granary.Api.Seeders
                 return;
             }
 
-            var categoryMap = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+            var slugToCategoryName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["dairy"] = "Nabiał i Jaja",
+                ["bakery"] = "Pieczywo",
+                ["fruits"] = "Owoce i Warzywa",
+                ["vegetables"] = "Owoce i Warzywa",
+                ["meat"] = "Mięso i Wędliny",
+                ["fish"] = "Ryby i Owoce morza",
+                ["pantry"] = "Spiżarnia i Suche",
+                ["sauces"] = "Sosy i Dodatki",
+                ["spices"] = "Przyprawy i Zioła",
+                ["beverages"] = "Napoje",
+                ["snacks"] = "Przekąski",
+                ["frozen"] = "Mrożonki"
+            };
 
-            var defaultCategoryId = categories.First().Id;
+            var catByName = categories.ToDictionary(c => c.Name.Trim().ToLower(), c => c.Id);
+            var defaultCategoryId = categories.FirstOrDefault(c => c.Name.ToLower() == "inne")?.Id ?? categories.First().Id;
 
             var jsonPath = Path.Combine(AppContext.BaseDirectory, "Seeders", "Data", "products.json");
             if (!File.Exists(jsonPath))
@@ -45,40 +60,26 @@ namespace Granary.Api.Seeders
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var productSeedList = JsonSerializer.Deserialize<List<ProductJsonModel>>(jsonContent, options);
 
-            if (productSeedList == null || !productSeedList.Any())
-            {
-                return;
-            }
+            if (productSeedList == null || !productSeedList.Any()) return;
 
             var existingProducts = await _context.Products.ToListAsync();
             var existingMap = existingProducts.ToDictionary(p => p.Name.ToLower().Trim(), p => p);
 
             var toAdd = new List<Product>();
-            int updatedCount = 0;
 
             foreach (var item in productSeedList)
             {
                 var normalizedName = item.Name.ToLower().Trim();
 
                 var catId = defaultCategoryId;
-                if (!string.IsNullOrEmpty(item.CategorySlug) && categoryMap.TryGetValue(item.CategorySlug, out var foundCatId))
+                if (!string.IsNullOrEmpty(item.CategorySlug) &&
+                    slugToCategoryName.TryGetValue(item.CategorySlug, out var targetCatName) &&
+                    catByName.TryGetValue(targetCatName.ToLower().Trim(), out var foundId))
                 {
-                    catId = foundCatId;
+                    catId = foundId;
                 }
 
-                if (existingMap.TryGetValue(normalizedName, out var existingProduct))
-                {
-                    bool wasModified = false;
-
-                    if (string.IsNullOrEmpty(existingProduct.ImageUrl) && !string.IsNullOrEmpty(item.ImageUrl))
-                    {
-                        existingProduct.ImageUrl = item.ImageUrl;
-                        wasModified = true;
-                    }
-
-                    if (wasModified) updatedCount++;
-                }
-                else
+                if (!existingMap.ContainsKey(normalizedName))
                 {
                     toAdd.Add(new Product
                     {
@@ -86,7 +87,7 @@ namespace Granary.Api.Seeders
                         Name = item.Name.Trim(),
                         CategoryId = catId,
                         ImageUrl = item.ImageUrl,
-                        DefaultUnit = item.DefaultUnit ?? "szt.",
+                        Unit = item.DefaultUnit ?? "szt.", 
                         DefaultShelfLifeDays = item.DefaultShelfLifeDays > 0 ? item.DefaultShelfLifeDays : 7
                     });
                 }
@@ -95,13 +96,8 @@ namespace Granary.Api.Seeders
             if (toAdd.Any())
             {
                 await _context.Products.AddRangeAsync(toAdd);
-            }
-
-            if (toAdd.Any() || updatedCount > 0)
-            {
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("ProductSeeder: Dodano {Added} nowych produktów, zaktualizowano {Updated} istniejących.",
-                    toAdd.Count, updatedCount);
+                _logger.LogInformation("ProductSeeder: Pomyślnie dodano {Added} produktów.", toAdd.Count);
             }
         }
 

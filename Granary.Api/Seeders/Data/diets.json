@@ -1,0 +1,44 @@
+﻿[
+  {
+    "id": "11111111-0000-0000-0000-000000000001",
+    "code": "standard",
+    "name": "Standardowa",
+    "displayOrder": 1
+  },
+  {
+    "id": "11111111-0000-0000-0000-000000000002",
+    "code": "vegetarian",
+    "name": "Wegetariańska",
+    "displayOrder": 2
+  },
+  {
+    "id": "11111111-0000-0000-0000-000000000003",
+    "code": "vegan",
+    "name": "Wegańska",
+    "displayOrder": 3
+  },
+  {
+    "id": "11111111-0000-0000-0000-000000000004",
+    "code": "pescetarian",
+    "name": "Pescetariańska",
+    "displayOrder": 4
+  },
+  {
+    "id": "11111111-0000-0000-0000-000000000005",
+    "code": "keto",
+    "name": "Keto",
+    "displayOrder": 5
+  },
+  {
+    "id": "11111111-0000-0000-0000-000000000006",
+    "code": "gluten_free",
+    "name": "Bezglutenowa",
+    "displayOrder": 6
+  },
+  {
+    "id": "11111111-0000-0000-0000-000000000007",
+    "code": "lactose_free",
+    "name": "Bezlaktozowa",
+    "displayOrder": 7
+  }
+]

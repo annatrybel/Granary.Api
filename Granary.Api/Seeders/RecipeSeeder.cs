@@ -3,6 +3,8 @@ using Granary.Api.Models;
 using Granary.Api.Models.DatabaseModels;
 using Microsoft.EntityFrameworkCore;
 
+using RecipeEntity = Granary.Api.Models.DatabaseModels.Recipe;
+
 namespace Granary.Api.Seeders
 {
     public class RecipeSeeder
@@ -24,7 +26,6 @@ namespace Granary.Api.Seeders
             }
 
             var jsonPath = Path.Combine(AppContext.BaseDirectory, "Seeders", "Data", "recipes.json");
-
             if (!File.Exists(jsonPath))
             {
                 jsonPath = Path.Combine(Directory.GetCurrentDirectory(), "Seeders", "Data", "recipes.json");
@@ -45,15 +46,10 @@ namespace Granary.Api.Seeders
             var existingProducts = await _context.Products.ToListAsync();
             var defaultCategory = await _context.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == "inne")
                                   ?? await _context.Categories.FirstOrDefaultAsync();
-
             var defaultCategoryId = defaultCategory?.Id ?? Guid.NewGuid();
 
-            var existingRecipes = await _context.Recipes
-                .AsNoTracking()
-                .ToListAsync();
-
-            var existingRecipeMap = existingRecipes
-                .ToDictionary(r => r.Title.Trim().ToLower(), r => r.Id);
+            var existingRecipes = await _context.Recipes.AsNoTracking().ToListAsync();
+            var existingRecipeMap = existingRecipes.ToDictionary(r => r.Title.Trim().ToLower(), r => r.Id);
 
             var recipesWithIngredients = await _context.RecipeIngredients
                 .AsNoTracking()
@@ -64,12 +60,11 @@ namespace Granary.Api.Seeders
             foreach (var rModel in seedModels)
             {
                 var normalizedTitle = rModel.Title.Trim().ToLower();
-                Guid recipeId;
 
-                if (!existingRecipeMap.TryGetValue(normalizedTitle, out recipeId))
+                if (!existingRecipeMap.TryGetValue(normalizedTitle, out var recipeId))
                 {
                     recipeId = Guid.NewGuid();
-                    var newRecipe = new Recipe
+                    var newRecipe = new RecipeEntity
                     {
                         Id = recipeId,
                         Title = rModel.Title.Trim(),
@@ -78,7 +73,7 @@ namespace Granary.Api.Seeders
                         Servings = rModel.Servings > 0 ? rModel.Servings : 2,
                         ImageUrl = rModel.ImageUrl,
                         CreatedAt = DateTime.UtcNow,
-                        CreatedByUserId = null 
+                        CreatedByUserId = null
                     };
 
                     _context.Recipes.Add(newRecipe);
@@ -93,6 +88,7 @@ namespace Granary.Api.Seeders
                 foreach (var ingModel in rModel.Ingredients)
                 {
                     var normalizedIngName = ingModel.ProductName.Trim().ToLower();
+
                     var product = existingProducts.FirstOrDefault(p => p.Name.Trim().ToLower() == normalizedIngName);
 
                     if (product == null)
@@ -109,7 +105,7 @@ namespace Granary.Api.Seeders
                             Id = Guid.NewGuid(),
                             Name = ingModel.ProductName.Trim(),
                             CategoryId = defaultCategoryId,
-                            DefaultUnit = !string.IsNullOrWhiteSpace(ingModel.Unit) ? ingModel.Unit : "szt.",
+                            Unit = !string.IsNullOrWhiteSpace(ingModel.Unit) ? ingModel.Unit : "szt.",
                             CreatedByUserId = null,
                             CreatedAt = DateTime.UtcNow
                         };
@@ -124,7 +120,7 @@ namespace Granary.Api.Seeders
                         RecipeId = recipeId,
                         ProductId = product.Id,
                         Quantity = ingModel.Quantity > 0 ? ingModel.Quantity : 1,
-                        Unit = !string.IsNullOrWhiteSpace(ingModel.Unit) ? ingModel.Unit : "szt.",
+                        Unit = ingModel.Unit ?? product.Unit, // Spójna jednostka
                         IsOptional = ingModel.IsOptional
                     });
                 }
@@ -133,7 +129,7 @@ namespace Granary.Api.Seeders
             }
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Pomyślnie załadowano przepisy globalne z pliku recipes.json.");
+            _logger.LogInformation("RecipeSeeder: Pomyślnie załadowano przepisy globalne ze spójnymi jednostkami.");
         }
 
         private class RecipeJsonModel
